@@ -2135,8 +2135,8 @@ ainda será calibrada com dados observados.
 </html>
 """
 
-    ARQ_DASH.write_text(
-        html,
+    html = ajustar_layout_status_servidor(html)
+    ARQ_DASH.write_text(html,
         encoding="utf-8"
     )
 
@@ -2833,6 +2833,139 @@ def processar_whatsapp(
 # CICLO
 # ============================================================
 
+def ajustar_layout_status_servidor(html):
+
+    if not html:
+        return html
+
+    css = """
+    <style>
+    .topbar-monitor{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:18px;
+        flex-wrap:wrap;
+    }
+
+    .topbar-monitor-esq{
+        flex:1 1 520px;
+        min-width:0;
+    }
+
+    .topbar-monitor-dir{
+        flex:0 1 340px;
+        width:min(340px, 100%);
+        margin-left:auto;
+    }
+
+    .status-servidor-inline{
+        position:static !important;
+        inset:auto !important;
+        right:auto !important;
+        left:auto !important;
+        top:auto !important;
+        bottom:auto !important;
+        margin:0 !important;
+        width:100% !important;
+        max-width:100% !important;
+        z-index:1 !important;
+    }
+
+    @media (max-width: 768px){
+        .topbar-monitor{
+            flex-direction:column;
+            align-items:stretch;
+        }
+
+        .topbar-monitor-dir{
+            width:100%;
+            margin-left:0;
+        }
+    }
+    </style>
+    """
+
+    js = r"""
+    <script>
+    (function () {
+        function moverStatusServidor() {
+            var titulo = Array.from(document.querySelectorAll("h1")).find(function (el) {
+                return (el.textContent || "").indexOf("Monitor Hidrológico") >= 0;
+            });
+
+            if (!titulo) return;
+
+            var marcador = Array.from(document.querySelectorAll("div,span,strong,b")).find(function (el) {
+                return (el.textContent || "").trim() === "Status do servidor";
+            });
+
+            if (!marcador) return;
+
+            var box = marcador;
+
+            while (box.parentElement && box.parentElement.tagName && box.parentElement.tagName.toLowerCase() === "div") {
+                var pai = box.parentElement;
+                var textoPai = (pai.textContent || "");
+                if (textoPai.indexOf("Status do servidor") >= 0 && pai.children.length >= 1) {
+                    box = pai;
+                } else {
+                    break;
+                }
+            }
+
+            var blocoTitulo = titulo.closest("div");
+            if (!blocoTitulo) return;
+
+            var blocoSubtitulo = blocoTitulo.nextElementSibling;
+
+            if (!document.getElementById("slot-status-servidor")) {
+                var topo = document.createElement("div");
+                topo.className = "topbar-monitor";
+
+                var esq = document.createElement("div");
+                esq.className = "topbar-monitor-esq";
+
+                var dir = document.createElement("div");
+                dir.className = "topbar-monitor-dir";
+                dir.id = "slot-status-servidor";
+
+                blocoTitulo.parentNode.insertBefore(topo, blocoTitulo);
+                topo.appendChild(esq);
+                topo.appendChild(dir);
+
+                esq.appendChild(blocoTitulo);
+
+                if (blocoSubtitulo) {
+                    esq.appendChild(blocoSubtitulo);
+                }
+            }
+
+            var slot = document.getElementById("slot-status-servidor");
+            if (!slot) return;
+
+            box.classList.add("status-servidor-inline");
+            slot.innerHTML = "";
+            slot.appendChild(box);
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", moverStatusServidor);
+        } else {
+            moverStatusServidor();
+        }
+    })();
+    </script>
+    """
+
+    if "topbar-monitor" not in html:
+        html = html.replace("</head>", css + "\n</head>")
+
+    if "slot-status-servidor" not in html:
+        html = html.replace("</body>", js + "\n</body>")
+
+    return html
+
 def ciclo():
 
     log(
@@ -3120,6 +3253,7 @@ def main():
         time.sleep(
             espera
         )
+
 
 
 
