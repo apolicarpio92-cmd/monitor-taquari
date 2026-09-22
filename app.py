@@ -236,10 +236,11 @@ iniciar_coletor()
 WIDGET_STATUS = r'''
 <style>
 #runtime-monitor-taquari {
-    position: fixed;
-    right: 16px;
-    bottom: 16px;
-    z-index: 99999;
+    position: absolute;
+    right: 28px;
+    top: 24px;
+    bottom: auto;
+    z-index: 50;
     min-width: 250px;
     max-width: 340px;
     padding: 12px 14px;
@@ -280,11 +281,15 @@ WIDGET_STATUS = r'''
 
 @media (max-width: 700px) {
     #runtime-monitor-taquari {
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
+        position: static;
+        left: auto;
+        right: auto;
+        top: auto;
+        bottom: auto;
+        width: auto;
         max-width: none;
         min-width: 0;
+        margin-top: 12px;
     }
 }
 </style>
@@ -315,6 +320,63 @@ WIDGET_STATUS = r'''
 
 <script>
 (function () {
+
+    function posicionarStatusNoCabecalho() {
+
+        const statusBox =
+            document.getElementById(
+                "runtime-monitor-taquari"
+            );
+
+        if (!statusBox) {
+            return;
+        }
+
+        const titulos =
+            Array.from(
+                document.querySelectorAll(
+                    "h1, h2"
+                )
+            );
+
+        const titulo =
+            titulos.find(
+                function (el) {
+                    return (
+                        el.textContent || ""
+                    ).includes(
+                        "Monitor Hidrológico"
+                    );
+                }
+            );
+
+        if (!titulo) {
+            return;
+        }
+
+        const header =
+            titulo.closest("header")
+            || titulo.parentElement;
+
+        if (!header) {
+            return;
+        }
+
+        header.style.position =
+            "relative";
+
+        if (
+            statusBox.parentElement
+            !== header
+        ) {
+
+            header.appendChild(
+                statusBox
+            );
+        }
+    }
+
+    posicionarStatusNoCabecalho();
 
     const elStatus =
         document.getElementById(
@@ -782,4 +844,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
 
