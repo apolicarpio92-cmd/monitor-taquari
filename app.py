@@ -2,6 +2,16 @@
 import threading
 import time
 import traceback
+
+# ============================================================
+# FUSO HORARIO BRASIL
+# ============================================================
+
+os.environ["TZ"] = "America/Sao_Paulo"
+
+if hasattr(time, "tzset"):
+    time.tzset()
+
 from pathlib import Path
 
 from flask import Flask, jsonify, send_file
@@ -213,4 +223,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
 
