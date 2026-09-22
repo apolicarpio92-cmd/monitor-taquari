@@ -8,12 +8,6 @@ from flask import Flask, send_file, jsonify
 
 import monitor_cloud
 
-from turso_storage import (
-    inicializar,
-    restaurar_do_turso,
-    salvar_no_turso,
-)
-
 
 BASE = Path(__file__).resolve().parent
 
@@ -47,19 +41,6 @@ def coletor():
                 "[CLOUD] Ciclo concluido.",
                 flush=True
             )
-
-            try:
-
-                salvar_no_turso()
-
-            except Exception:
-
-                print(
-                    "[TURSO] ERRO AO SINCRONIZAR:",
-                    flush=True
-                )
-
-                traceback.print_exc()
 
         except Exception:
 
@@ -95,30 +76,6 @@ def iniciar_coletor():
         _coletor_iniciado = True
 
 
-# ============================================================
-# TURSO
-# ============================================================
-
-try:
-
-    inicializar()
-
-    restaurar_do_turso()
-
-except Exception:
-
-    print(
-        "[TURSO] ERRO NA INICIALIZACAO:",
-        flush=True
-    )
-
-    traceback.print_exc()
-
-
-# ============================================================
-# COLETOR
-# ============================================================
-
 iniciar_coletor()
 
 
@@ -150,11 +107,6 @@ def health():
         {
             "status": "ok",
             "monitor": "taquari",
-            "turso": bool(
-                os.environ.get(
-                    "TURSO_DATABASE_URL"
-                )
-            ),
         }
     )
 
