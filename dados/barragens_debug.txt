@@ -8,18 +8,18 @@ Reservatórios
 /
 Taquari-Antas
 Nível das barragens do Taquari-Antas
-leitura de 02:00
+leitura de 03:00
 As barragens estão baixando o nível e soltando menos água.
 Todas as três estão soltando menos água, e o nível baixa em todas.
 desce da cadeia agora
-10.787
+10.286
 m³/s
 ↓
-baixando de 11.602 em 2 h
+baixando de 11.242 em 2 h
 típico 168
 máx 12.194 · mai/24
 saindo a mais do que entra
-976
+933
 m³/s
 A cadeia de uma vez
 ↓
@@ -34,31 +34,31 @@ A cadeia de uma vez
 montante → jusante
 Castro Alves
 →
-entra 5.844
+entra 5.518
 sai
-6.259
+5.858
 m³/s
 →
-+3.320
++3.307
 Monte Claro
 →
-entra 9.579
+entra 9.165
 sai
-9.738
+9.290
 m³/s
 →
-+646
++528
 14 de Julho
 →
-entra 10.384
+entra 9.818
 sai
-10.787
+10.286
 m³/s
 →
 rio em Santa Tereza
-17,00
+17,11
 m
-subindo 72 cm/h
+subindo 61 cm/h
 = chuva e afluentes do trecho: o que
 sai
 de uma barragem + a gota = o que
@@ -104,22 +104,22 @@ e
 Castro Alves
 Rio das Antas
 entra
-5.844
+5.518
 m³/s
 Está soltando mais do que recebe.
-soltando 415 m³/s a mais
+soltando 341 m³/s a mais
 verte 100% — parou de segurar
 acima do máx. normal (comum)
-hoje 02:00 ·
+hoje 03:00 ·
 CERAN
 · horária
 Nível
-245,58 m
-, baixando 58 cm em 2 h.
+245,35 m
+, baixando 51 cm em 2 h.
 faixa de operação
 ↓
 baixando
-58 cm em 2 h
+51 cm em 2 h
 mín. normal
 239,00
 máx. normal
@@ -127,58 +127,58 @@ máx. normal
 maximorum
 246,36
 Está
-5,58 m acima do máximo normal
-de operação — situação comum nesta usina. Faltam 0,78 m para o maximorum, o limite de projeto.
+5,35 m acima do máximo normal
+de operação — situação comum nesta usina. Faltam 1,01 m para o maximorum, o limite de projeto.
 entra
-5.844
+5.518
 m³/s
 ▼
 baixando nível
 sai
-6.259
+5.858
 m³/s
 Parou de segurar: 100% da saída passa direto.
 Daqui para baixo, o que chegar segue para a próxima cidade sem ser retido.
-Esta usina acumula 4,60 hm³ de volume útil, o suficiente para segurar cerca de 12 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
+Esta usina acumula 4,60 hm³ de volume útil, o suficiente para segurar cerca de 13 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
 Ver detalhe deste reservatório
 +
 nível a montante
 · últimas 12 horas
 ↓
 baixando
-58 cm em 2 h
-de 244,44 a 247,16 m nesta janela
-amplitude 2,72 m
+51 cm em 2 h
+de 245,35 a 247,16 m nesta janela
+amplitude 1,81 m
 Toda esta janela está
 acima do máximo normal
 de operação (240,00 m) — a faixa hachurada embaixo marca o lado dele. A escala vertical é ampliada e mede no mínimo 10% da faixa de operação desta usina, para que uma oscilação pequena não pareça uma queda.
 por onde a água sai
-6.259 m³/s passam direto.
+5.858 m³/s passam direto.
 Sai pelo vertedouro, que não tem controle de vazão. Só acontece quando o reservatório não consegue mais segurar.
 entra e sai
 · últimas 12 horas
 sai
 ↓
 baixando
-de 7.326 para 6.259 m³/s em 2 h
+de 6.764 para 5.858 m³/s em 2 h
 entra
 sai
-máx 9.832 m³/s · 21/09 → 02:00
+máx 9.832 m³/s · 21/09 → 03:00
 últimos 15 dias · ANA/SAR
 máx 758 m³/s
 07/09 → 21/09
 uma leitura por dia, das 00h
 O histórico longo desta usina só existe em ritmo diário, no SAR da ANA. Fica separado do gráfico de cima porque uma barra de hora e uma de dia não podem ter o mesmo tamanho.
 medido
-A saída caiu 506 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
-6.259
+A saída caiu 401 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
+5.858
 m³/s
 descem daqui
 ↓
 baixando
-de 7.326 para 6.259 m³/s em 2 h
+de 6.764 para 5.858 m³/s em 2 h
 Entre Castro Alves e Monte Claro, a bacia acrescenta
-+3.321 m³/s
++3.307 m³/s
 de chuva e afluentes.
 contribuição da bacia
 · 15 horas
@@ -188,17 +188,17 @@ Barra abaixo da linha: chegou menos do que saiu. Acontece pelo tempo que a água
 Monte Claro
 Rio das Antas
 entra
-9.579
+9.165
 m³/s
 Entra e sai praticamente o mesmo. Não segura mais nada.
 entra e sai o mesmo
 verte 100% — parou de segurar
 acima do máx. normal (comum)
-hoje 02:00 ·
+hoje 03:00 ·
 CERAN
 · horária
 Nível
-153,04 m
+152,74 m
 , baixando 68 cm em 2 h.
 faixa de operação
 ↓
@@ -211,18 +211,18 @@ máx. normal
 maximorum
 155,00
 Está
-5,04 m acima do máximo normal
-de operação — situação comum nesta usina. Faltam 1,96 m para o maximorum, o limite de projeto.
+4,74 m acima do máximo normal
+de operação — situação comum nesta usina. Faltam 2,26 m para o maximorum, o limite de projeto.
 entra
-9.579
+9.165
 m³/s
 =
 o que entra, sai
 sai
-9.738
+9.290
 m³/s
 Parou de segurar: 100% da saída passa direto.
-Esta usina acumula 1,46 hm³ de volume útil, o suficiente para segurar cerca de 2 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
+Esta usina acumula 1,46 hm³ de volume útil, o suficiente para segurar cerca de 3 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
 Ver detalhe deste reservatório
 +
 nível a montante
@@ -230,36 +230,36 @@ nível a montante
 ↓
 baixando
 68 cm em 2 h
-de 151,97 a 154,33 m nesta janela
-amplitude 2,36 m
+de 152,10 a 154,33 m nesta janela
+amplitude 2,23 m
 Toda esta janela está
 acima do máximo normal
 de operação (148,00 m) — a faixa hachurada embaixo marca o lado dele.
 por onde a água sai
-9.738 m³/s passam direto.
+9.290 m³/s passam direto.
 entra e sai
 · últimas 12 horas
 sai
 ↓
 baixando
-de 10.798 para 9.738 m³/s em 2 h
+de 10.323 para 9.290 m³/s em 2 h
 entra
 sai
-máx 11.963 m³/s · 21/09 → 02:00
+máx 11.963 m³/s · 21/09 → 03:00
 últimos 15 dias · ANA/SAR
 máx 1.265 m³/s
 07/09 → 21/09
 uma leitura por dia, das 00h
 medido
-A saída caiu 585 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
-9.738
+A saída caiu 448 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
+9.290
 m³/s
 descem daqui
 ↓
 baixando
-de 10.798 para 9.738 m³/s em 2 h
+de 10.323 para 9.290 m³/s em 2 h
 Entre Monte Claro e 14 de Julho, a bacia acrescenta
-+646 m³/s
++529 m³/s
 de chuva e afluentes.
 contribuição da bacia
 · 15 horas
@@ -268,22 +268,22 @@ contribuição da bacia
 14 de Julho
 Rio das Antas
 entra
-10.384
+9.818
 m³/s
 Está soltando mais do que recebe.
-soltando 403 m³/s a mais
+soltando 467 m³/s a mais
 verte 100% — parou de segurar
 acima do máx. normal (comum)
-hoje 02:00 ·
+hoje 03:00 ·
 CERAN
 · horária
 Nível
-107,42 m
-, baixando 44 cm em 2 h.
+107,13 m
+, baixando 54 cm em 2 h.
 faixa de operação
 ↓
 baixando
-44 cm em 2 h
+54 cm em 2 h
 mín. normal
 103,00
 máx. normal
@@ -291,59 +291,59 @@ máx. normal
 maximorum
 110,15
 Está
-3,42 m acima do máximo normal
-de operação — situação comum nesta usina. Faltam 2,73 m para o maximorum, o limite de projeto.
+3,13 m acima do máximo normal
+de operação — situação comum nesta usina. Faltam 3,02 m para o maximorum, o limite de projeto.
 entra
-10.384
+9.818
 m³/s
 ▼
 baixando nível
 sai
-10.787
+10.286
 m³/s
 Parou de segurar: 100% da saída passa direto.
-Esta usina acumula 4,71 hm³ de volume útil, o suficiente para segurar cerca de 7 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
+Esta usina acumula 4,71 hm³ de volume útil, o suficiente para segurar cerca de 8 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
 Ver detalhe deste reservatório
 +
 nível a montante
 · últimas 12 horas
 ↓
 baixando
-44 cm em 2 h
-de 106,54 a 108,09 m nesta janela
-amplitude 1,55 m
+54 cm em 2 h
+de 107,08 a 108,09 m nesta janela
+amplitude 1,01 m
 Toda esta janela está
 acima do máximo normal
 de operação (104,00 m) — a faixa hachurada embaixo marca o lado dele.
 por onde a água sai
-10.787 m³/s passam direto.
+10.286 m³/s passam direto.
 entra e sai
 · últimas 12 horas
 sai
 ↓
 baixando
-de 11.602 para 10.787 m³/s em 2 h
+de 11.242 para 10.286 m³/s em 2 h
 entra
 sai
-máx 11.893 m³/s · 21/09 → 02:00
+máx 11.893 m³/s · 21/09 → 03:00
 últimos 15 dias · ANA/SAR
 máx 1.247 m³/s
 07/09 → 21/09
 uma leitura por dia, das 00h
 medido
-A saída caiu 455 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
+A saída caiu 501 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
 O que está saindo da cadeia agora
-10.787
+10.286
 m³/s
 ↓
 baixando
-de 11.602 para 10.787 m³/s em 2 h
+de 11.242 para 10.286 m³/s em 2 h
 Sai de 14 de Julho, a última barragem antes de Santa Tereza.
 Daqui em diante o dado é de rio, medido a cada 15 minutos.
 o que sai da cadeia chega em
 Santa Tereza
-17,00 m
-subindo 72 cm/h · leitura de 01:00
+17,11 m
+subindo 61 cm/h · leitura de 02:00
 De 14 de Julho até as primeiras cidades do Taquari o trecho é curto. O que sai agora chega em poucas horas.
 Ver o gráfico do rio em Santa Tereza
 →
@@ -390,7 +390,7 @@ O que os números significam e de onde eles vêm.
 Quais barragens do Taquari-Antas estão vertendo agora?
 Castro Alves, Monte Claro e 14 de Julho. Verter é a água passar por cima do vertedouro. Essa parte da saída não tem controle de vazão.
 Qual o nível dos reservatórios do Taquari-Antas agora?
-Castro Alves 245,58 m (hoje 02:00). Monte Claro 153,04 m (hoje 02:00). 14 de Julho 107,42 m (hoje 02:00). Cada usina mede o nível na própria referência. Os números não se comparam entre usinas nem com o nível do rio nas cidades.
+Castro Alves 245,35 m (hoje 03:00). Monte Claro 152,74 m (hoje 03:00). 14 de Julho 107,13 m (hoje 03:00). Cada usina mede o nível na própria referência. Os números não se comparam entre usinas nem com o nível do rio nas cidades.
 Por que olhar os reservatórios e não só o nível do rio?
 O reservatório mostra a água antes de ela chegar na cidade. Na cheia de maio de 2024, o Passo Real recebeu 4.584 m³/s no dia 2 e soltou 2.215. No dia 4 já soltava 4.656, mais do que entrava. A régua das cidades abaixo só registrou isso horas depois. O que sai de um reservatório agora é o que chega na cidade abaixo nas horas seguintes — é a informação mais antecipada que este site tem.
 Por que a bacia se chama Taquari-Antas?
@@ -435,7 +435,7 @@ ANA/SAR
       Cotas de referência:
 ONS
 , cadastro de informações operacionais hidráulicas da bacia do Jacuí.
-      Atualizado em 2026-09-22 02:06.
+      Atualizado em 2026-09-22 03:04.
 Projeto voluntário e gratuito para apoiar a comunidade e a Defesa Civil no acompanhamento dos rios. Dados públicos de
 SGB/CPRM
 e

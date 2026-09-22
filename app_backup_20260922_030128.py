@@ -4,7 +4,7 @@ import time
 import traceback
 from pathlib import Path
 
-from flask import Flask, jsonify, send_file
+from flask import Flask, send_file, jsonify
 
 import monitor_cloud
 
@@ -12,11 +12,10 @@ from turso_storage import (
     inicializar,
     restaurar_do_turso,
     salvar_no_turso,
-    turso_configurado,
 )
 
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parent
 
 app = Flask(__name__)
 
@@ -30,7 +29,7 @@ def coletor():
 
     print(
         "[CLOUD] Coletor iniciado.",
-        flush=True,
+        flush=True
     )
 
     while True:
@@ -39,31 +38,34 @@ def coletor():
 
             print(
                 "[CLOUD] Executando ciclo...",
-                flush=True,
+                flush=True
             )
 
             monitor_cloud.ciclo()
 
             print(
                 "[CLOUD] Ciclo concluido.",
-                flush=True,
+                flush=True
             )
 
             try:
+
                 salvar_no_turso()
 
             except Exception:
+
                 print(
-                    "[TURSO] Erro ao salvar historico.",
-                    flush=True,
+                    "[TURSO] ERRO AO SINCRONIZAR:",
+                    flush=True
                 )
+
                 traceback.print_exc()
 
         except Exception:
 
             print(
                 "[CLOUD] ERRO NO CICLO:",
-                flush=True,
+                flush=True
             )
 
             traceback.print_exc()
@@ -82,13 +84,13 @@ def iniciar_coletor():
         if _coletor_iniciado:
             return
 
-        thread = threading.Thread(
+        t = threading.Thread(
             target=coletor,
             daemon=True,
             name="coletor-taquari",
         )
 
-        thread.start()
+        t.start()
 
         _coletor_iniciado = True
 
@@ -99,23 +101,15 @@ def iniciar_coletor():
 
 try:
 
-    if turso_configurado():
+    inicializar()
 
-        inicializar()
-        restaurar_do_turso()
-
-    else:
-
-        print(
-            "[TURSO] Credenciais nao encontradas.",
-            flush=True,
-        )
+    restaurar_do_turso()
 
 except Exception:
 
     print(
         "[TURSO] ERRO NA INICIALIZACAO:",
-        flush=True,
+        flush=True
     )
 
     traceback.print_exc()
@@ -132,7 +126,7 @@ iniciar_coletor()
 def dashboard():
 
     arquivo = (
-        BASE_DIR
+        BASE
         / "dashboard_v3.html"
     )
 
@@ -140,13 +134,12 @@ def dashboard():
 
         return (
             "Dashboard ainda nao foi gerado.",
-            503,
+            503
         )
 
     return send_file(
         arquivo,
-        mimetype="text/html",
-        max_age=0,
+        mimetype="text/html"
     )
 
 
@@ -157,7 +150,11 @@ def health():
         {
             "status": "ok",
             "monitor": "taquari",
-            "turso": turso_configurado(),
+            "turso": bool(
+                os.environ.get(
+                    "TURSO_DATABASE_URL"
+                )
+            ),
         }
     )
 
@@ -166,7 +163,7 @@ def health():
 def status():
 
     arquivo = (
-        BASE_DIR
+        BASE
         / "dados"
         / "status.json"
     )
@@ -181,8 +178,7 @@ def status():
 
     return send_file(
         arquivo,
-        mimetype="application/json",
-        max_age=0,
+        mimetype="application/json"
     )
 
 
@@ -191,11 +187,11 @@ if __name__ == "__main__":
     port = int(
         os.environ.get(
             "PORT",
-            "10000",
+            "10000"
         )
     )
 
     app.run(
         host="0.0.0.0",
-        port=port,
+        port=port
     )

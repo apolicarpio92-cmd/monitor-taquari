@@ -4,20 +4,19 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-import turso_serverless
+import libsql
 
 
-BASE = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent
 
-ARQUIVOS = [
-    BASE / "historico" / "telemetria_historico.csv",
-    BASE / "historico" / "barragens_historico.csv",
-    BASE / "dados" / "status.json",
+ARQUIVOS_PERSISTENTES = [
+    BASE_DIR / "historico" / "telemetria_historico.csv",
+    BASE_DIR / "historico" / "barragens_historico.csv",
+    BASE_DIR / "dados" / "status.json",
 ]
 
 
-def configurado():
-
+def turso_configurado():
     return bool(
         os.environ.get("TURSO_DATABASE_URL")
         and os.environ.get("TURSO_AUTH_TOKEN")
@@ -25,43 +24,25 @@ def configurado():
 
 
 def conectar():
-
-    url = os.environ.get(
-        "TURSO_DATABASE_URL"
-    )
-
-    token = os.environ.get(
-        "TURSO_AUTH_TOKEN"
-    )
+    url = os.environ.get("TURSO_DATABASE_URL")
+    token = os.environ.get("TURSO_AUTH_TOKEN")
 
     if not url or not token:
-
         raise RuntimeError(
-            "TURSO_DATABASE_URL / TURSO_AUTH_TOKEN "
-            "nao configurados."
+            "TURSO_DATABASE_URL ou TURSO_AUTH_TOKEN ausente."
         )
 
-    return turso_serverless.connect(
-        url,
+    return libsql.connect(
+        str(BASE_DIR / "monitor_turso_cache.db"),
+        sync_url=url,
         auth_token=token,
     )
 
 
-def inicializar():
-
-    if not configurado():
-
-        print(
-            "[TURSO] Credenciais nao configuradas.",
-            flush=True
-        )
-
-        return False
-
+def criar_tabela():
     conn = conectar()
 
     try:
-
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS monitor_arquivos (
@@ -73,28 +54,37 @@ def inicializar():
         )
 
         conn.commit()
-
-        print(
-            "[TURSO] Banco inicializado.",
-            flush=True
-        )
-
-        return True
+        conn.sync()
 
     finally:
-
         conn.close()
 
 
-def salvar_no_turso():
+def inicializar():
+    if not turso_configurado():
+        print(
+            "[TURSO] Credenciais nao configuradas.",
+            flush=True,
+        )
+        return False
 
-    if not configurado():
+    criar_tabela()
+
+    print(
+        "[TURSO] Banco inicializado.",
+        flush=True,
+    )
+
+    return True
+
+
+def salvar_no_turso():
+    if not turso_configurado():
         return False
 
     conn = conectar()
 
     try:
-
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS monitor_arquivos (
@@ -105,24 +95,26 @@ def salvar_no_turso():
             """
         )
 
-        agora = datetime.now().isoformat()
+        agora = datetime.now().isoformat(
+            timespec="seconds"
+        )
 
-        quantidade = 0
+        total = 0
 
-        for arquivo in ARQUIVOS:
-
+        for arquivo in ARQUIVOS_PERSISTENTES:
             if not arquivo.exists():
                 continue
 
             conteudo = arquivo.read_text(
-                encoding="utf-8-sig"
+                encoding="utf-8-sig",
+                errors="replace",
             )
 
             nome = str(
-                arquivo.relative_to(BASE)
+                arquivo.relative_to(BASE_DIR)
             ).replace(
                 "\\",
-                "/"
+                "/",
             )
 
             conn.execute(
@@ -144,41 +136,33 @@ def salvar_no_turso():
                     nome,
                     conteudo,
                     agora,
-                )
+                ),
             )
 
-            quantidade += 1
+            total += 1
 
         conn.commit()
+        conn.sync()
 
         print(
-            f"[TURSO] {quantidade} arquivo(s) "
-            "sincronizado(s).",
-            flush=True
+            f"[TURSO] {total} arquivo(s) sincronizado(s).",
+            flush=True,
         )
 
         return True
 
     finally:
-
         conn.close()
 
 
 def restaurar_do_turso():
-
-    if not configurado():
-
-        print(
-            "[TURSO] Sem credenciais. "
-            "Restauracao ignorada.",
-            flush=True
-        )
-
+    if not turso_configurado():
         return False
 
     conn = conectar()
 
     try:
+        conn.sync()
 
         conn.execute(
             """
@@ -196,53 +180,34 @@ def restaurar_do_turso():
             """
             SELECT
                 nome,
-                conteudo,
-                atualizado_em
+                conteudo
             FROM monitor_arquivos
             """
         ).fetchall()
 
-        if not rows:
+        total = 0
 
-            print(
-                "[TURSO] Banco ainda sem historico.",
-                flush=True
-            )
-
-            return True
-
-        quantidade = 0
-
-        for row in rows:
-
-            nome = row[0]
-            conteudo = row[1]
-
-            destino = (
-                BASE
-                / Path(nome)
-            )
+        for nome, conteudo in rows:
+            destino = BASE_DIR / Path(nome)
 
             destino.parent.mkdir(
                 parents=True,
-                exist_ok=True
+                exist_ok=True,
             )
 
             destino.write_text(
                 conteudo,
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
-            quantidade += 1
+            total += 1
 
         print(
-            f"[TURSO] {quantidade} arquivo(s) "
-            "restaurado(s).",
-            flush=True
+            f"[TURSO] {total} arquivo(s) restaurado(s).",
+            flush=True,
         )
 
         return True
 
     finally:
-
         conn.close()
