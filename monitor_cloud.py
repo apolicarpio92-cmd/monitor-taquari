@@ -101,6 +101,11 @@ def log(msg):
         / f"monitor_{datetime.now():%Y%m%d}.log"
     )
 
+    arquivo.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     with arquivo.open(
         "a",
         encoding="utf-8"
@@ -3115,6 +3120,7 @@ def main():
         time.sleep(
             espera
         )
+
 
 
 

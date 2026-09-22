@@ -18,6 +18,20 @@ from turso_storage import (
 
 BASE_DIR = Path(__file__).resolve().parent
 
+# ============================================================
+# PASTAS DE TRABALHO
+# ============================================================
+
+for pasta in (
+    BASE_DIR / "logs",
+    BASE_DIR / "dados",
+    BASE_DIR / "historico",
+):
+    pasta.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
 app = Flask(__name__)
 
 INTERVALO = 300
@@ -199,3 +213,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
