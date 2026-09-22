@@ -23,6 +23,7 @@ from turso_storage import (
     restaurar_do_turso,
     salvar_no_turso,
     turso_configurado,
+    status_turso,
 )
 
 
@@ -186,6 +187,29 @@ def health():
     )
 
 
+@app.get("/turso-status")
+def turso_status():
+
+    try:
+
+        resultado = status_turso()
+
+        return jsonify(
+            {
+                "status": "ok",
+                "turso": resultado,
+            }
+        )
+
+    except Exception as e:
+
+        return jsonify(
+            {
+                "status": "erro",
+                "erro": str(e),
+            }
+        ), 500
+
 @app.get("/status")
 def status():
 
@@ -223,5 +247,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
 
 

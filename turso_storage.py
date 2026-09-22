@@ -211,3 +211,67 @@ def restaurar_do_turso():
 
     finally:
         conn.close()
+
+
+def status_turso():
+
+    if not turso_configurado():
+
+        return {
+            "configurado": False,
+            "conectado": False,
+            "quantidade": 0,
+            "arquivos": [],
+        }
+
+    conn = conectar()
+
+    try:
+
+        conn.sync()
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS monitor_arquivos (
+                nome TEXT PRIMARY KEY,
+                conteudo TEXT NOT NULL,
+                atualizado_em TEXT NOT NULL
+            )
+            """
+        )
+
+        conn.commit()
+
+        rows = conn.execute(
+            """
+            SELECT
+                nome,
+                atualizado_em,
+                length(conteudo)
+            FROM monitor_arquivos
+            ORDER BY nome
+            """
+        ).fetchall()
+
+        arquivos = []
+
+        for nome, atualizado_em, tamanho in rows:
+
+            arquivos.append(
+                {
+                    "nome": nome,
+                    "atualizado_em": atualizado_em,
+                    "bytes": tamanho,
+                }
+            )
+
+        return {
+            "configurado": True,
+            "conectado": True,
+            "quantidade": len(arquivos),
+            "arquivos": arquivos,
+        }
+
+    finally:
+
+        conn.close()

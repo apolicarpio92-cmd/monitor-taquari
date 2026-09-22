@@ -4,3 +4,6 @@
 .env
 logs/*.log
 monitor_turso_cache.db*
+*_backup_*.py
+*_backup_*.txt
+*_backup_*.yaml
