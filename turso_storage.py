@@ -16,92 +16,194 @@ ARQUIVOS_PERSISTENTES = [
 ]
 
 
+_ESTADO = {
+    "configurado": False,
+    "conectado": False,
+    "ultima_operacao": None,
+    "ultima_sincronizacao": None,
+    "ultimo_erro": None,
+    "quantidade": 0,
+    "arquivos": [],
+}
+
+
+def agora():
+    return datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+
 def turso_configurado():
-    return bool(
+
+    ok = bool(
         os.environ.get("TURSO_DATABASE_URL")
         and os.environ.get("TURSO_AUTH_TOKEN")
     )
 
+    _ESTADO["configurado"] = ok
+
+    return ok
+
 
 def conectar():
-    url = os.environ.get("TURSO_DATABASE_URL")
-    token = os.environ.get("TURSO_AUTH_TOKEN")
+
+    url = os.environ.get(
+        "TURSO_DATABASE_URL"
+    )
+
+    token = os.environ.get(
+        "TURSO_AUTH_TOKEN"
+    )
 
     if not url or not token:
+
         raise RuntimeError(
             "TURSO_DATABASE_URL ou TURSO_AUTH_TOKEN ausente."
         )
 
     return libsql.connect(
-        str(BASE_DIR / "monitor_turso_cache.db"),
+        str(
+            BASE_DIR
+            / "monitor_turso_cache.db"
+        ),
         sync_url=url,
         auth_token=token,
     )
 
 
-def criar_tabela():
-    conn = conectar()
+def criar_tabela(conn):
 
-    try:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS monitor_arquivos (
-                nome TEXT PRIMARY KEY,
-                conteudo TEXT NOT NULL,
-                atualizado_em TEXT NOT NULL
-            )
-            """
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS monitor_arquivos (
+            nome TEXT PRIMARY KEY,
+            conteudo TEXT NOT NULL,
+            atualizado_em TEXT NOT NULL
+        )
+        """
+    )
+
+    conn.commit()
+
+
+def atualizar_lista_local(conn):
+
+    rows = conn.execute(
+        """
+        SELECT
+            nome,
+            atualizado_em,
+            length(conteudo)
+        FROM monitor_arquivos
+        ORDER BY nome
+        """
+    ).fetchall()
+
+    arquivos = []
+
+    for nome, atualizado_em, tamanho in rows:
+
+        arquivos.append(
+            {
+                "nome": nome,
+                "atualizado_em": atualizado_em,
+                "bytes": tamanho,
+            }
         )
 
-        conn.commit()
-        conn.sync()
+    _ESTADO["quantidade"] = len(
+        arquivos
+    )
 
-    finally:
-        conn.close()
+    _ESTADO["arquivos"] = arquivos
 
 
 def inicializar():
+
+    _ESTADO["ultima_operacao"] = (
+        "inicializacao"
+    )
+
     if not turso_configurado():
+
+        _ESTADO["conectado"] = False
+        _ESTADO["ultimo_erro"] = (
+            "Credenciais nao configuradas."
+        )
+
         print(
             "[TURSO] Credenciais nao configuradas.",
             flush=True,
         )
+
         return False
 
-    criar_tabela()
+    conn = None
 
-    print(
-        "[TURSO] Banco inicializado.",
-        flush=True,
-    )
+    try:
 
-    return True
+        conn = conectar()
+
+        criar_tabela(
+            conn
+        )
+
+        # sincronizacao remota
+        conn.sync()
+
+        atualizar_lista_local(
+            conn
+        )
+
+        _ESTADO["conectado"] = True
+        _ESTADO["ultima_sincronizacao"] = agora()
+        _ESTADO["ultimo_erro"] = None
+
+        print(
+            "[TURSO] Banco inicializado.",
+            flush=True,
+        )
+
+        return True
+
+    except Exception as e:
+
+        _ESTADO["conectado"] = False
+        _ESTADO["ultimo_erro"] = str(e)
+
+        raise
+
+    finally:
+
+        if conn is not None:
+            conn.close()
 
 
 def salvar_no_turso():
+
+    _ESTADO["ultima_operacao"] = (
+        "salvamento"
+    )
+
     if not turso_configurado():
         return False
 
-    conn = conectar()
+    conn = None
 
     try:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS monitor_arquivos (
-                nome TEXT PRIMARY KEY,
-                conteudo TEXT NOT NULL,
-                atualizado_em TEXT NOT NULL
-            )
-            """
+
+        conn = conectar()
+
+        criar_tabela(
+            conn
         )
 
-        agora = datetime.now().isoformat(
-            timespec="seconds"
-        )
+        momento = agora()
 
         total = 0
 
         for arquivo in ARQUIVOS_PERSISTENTES:
+
             if not arquivo.exists():
                 continue
 
@@ -111,7 +213,9 @@ def salvar_no_turso():
             )
 
             nome = str(
-                arquivo.relative_to(BASE_DIR)
+                arquivo.relative_to(
+                    BASE_DIR
+                )
             ).replace(
                 "\\",
                 "/",
@@ -135,14 +239,24 @@ def salvar_no_turso():
                 (
                     nome,
                     conteudo,
-                    agora,
+                    momento,
                 ),
             )
 
             total += 1
 
         conn.commit()
+
+        # envia as alteracoes para Turso
         conn.sync()
+
+        atualizar_lista_local(
+            conn
+        )
+
+        _ESTADO["conectado"] = True
+        _ESTADO["ultima_sincronizacao"] = agora()
+        _ESTADO["ultimo_erro"] = None
 
         print(
             f"[TURSO] {total} arquivo(s) sincronizado(s).",
@@ -151,30 +265,40 @@ def salvar_no_turso():
 
         return True
 
+    except Exception as e:
+
+        _ESTADO["conectado"] = False
+        _ESTADO["ultimo_erro"] = str(e)
+
+        raise
+
     finally:
-        conn.close()
+
+        if conn is not None:
+            conn.close()
 
 
 def restaurar_do_turso():
+
+    _ESTADO["ultima_operacao"] = (
+        "restauracao"
+    )
+
     if not turso_configurado():
         return False
 
-    conn = conectar()
+    conn = None
 
     try:
+
+        conn = conectar()
+
+        # recebe o estado remoto
         conn.sync()
 
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS monitor_arquivos (
-                nome TEXT PRIMARY KEY,
-                conteudo TEXT NOT NULL,
-                atualizado_em TEXT NOT NULL
-            )
-            """
+        criar_tabela(
+            conn
         )
-
-        conn.commit()
 
         rows = conn.execute(
             """
@@ -188,7 +312,11 @@ def restaurar_do_turso():
         total = 0
 
         for nome, conteudo in rows:
-            destino = BASE_DIR / Path(nome)
+
+            destino = (
+                BASE_DIR
+                / Path(nome)
+            )
 
             destino.parent.mkdir(
                 parents=True,
@@ -202,6 +330,14 @@ def restaurar_do_turso():
 
             total += 1
 
+        atualizar_lista_local(
+            conn
+        )
+
+        _ESTADO["conectado"] = True
+        _ESTADO["ultima_sincronizacao"] = agora()
+        _ESTADO["ultimo_erro"] = None
+
         print(
             f"[TURSO] {total} arquivo(s) restaurado(s).",
             flush=True,
@@ -209,69 +345,49 @@ def restaurar_do_turso():
 
         return True
 
+    except Exception as e:
+
+        _ESTADO["conectado"] = False
+        _ESTADO["ultimo_erro"] = str(e)
+
+        raise
+
     finally:
-        conn.close()
+
+        if conn is not None:
+            conn.close()
 
 
 def status_turso():
+    """
+    IMPORTANTE:
+    esta funcao NAO acessa a rede.
 
-    if not turso_configurado():
+    Ela devolve somente o resultado da ultima
+    operacao Turso executada pelo monitor.
+    Por isso /turso-status responde imediatamente.
+    """
 
-        return {
-            "configurado": False,
-            "conectado": False,
-            "quantidade": 0,
-            "arquivos": [],
-        }
-
-    conn = conectar()
-
-    try:
-
-        conn.sync()
-
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS monitor_arquivos (
-                nome TEXT PRIMARY KEY,
-                conteudo TEXT NOT NULL,
-                atualizado_em TEXT NOT NULL
-            )
-            """
-        )
-
-        conn.commit()
-
-        rows = conn.execute(
-            """
-            SELECT
-                nome,
-                atualizado_em,
-                length(conteudo)
-            FROM monitor_arquivos
-            ORDER BY nome
-            """
-        ).fetchall()
-
-        arquivos = []
-
-        for nome, atualizado_em, tamanho in rows:
-
-            arquivos.append(
-                {
-                    "nome": nome,
-                    "atualizado_em": atualizado_em,
-                    "bytes": tamanho,
-                }
-            )
-
-        return {
-            "configurado": True,
-            "conectado": True,
-            "quantidade": len(arquivos),
-            "arquivos": arquivos,
-        }
-
-    finally:
-
-        conn.close()
+    return {
+        "configurado": turso_configurado(),
+        "conectado": _ESTADO[
+            "conectado"
+        ],
+        "ultima_operacao": _ESTADO[
+            "ultima_operacao"
+        ],
+        "ultima_sincronizacao": _ESTADO[
+            "ultima_sincronizacao"
+        ],
+        "ultimo_erro": _ESTADO[
+            "ultimo_erro"
+        ],
+        "quantidade": _ESTADO[
+            "quantidade"
+        ],
+        "arquivos": list(
+            _ESTADO[
+                "arquivos"
+            ]
+        ),
+    }
