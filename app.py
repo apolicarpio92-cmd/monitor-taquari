@@ -65,6 +65,7 @@ ESTADO_RUNTIME = {
     "ultima_coleta_ok": None,
     "ultimo_erro": None,
     "ultimo_erro_em": None,
+    "ultimo_ping_externo": None,
 }
 
 
@@ -303,6 +304,13 @@ WIDGET_STATUS = r'''
     >
         Última coleta: -
     </div>
+
+    <div
+        id="rt-ping"
+        class="rt-secundario"
+    >
+        Último ping externo: -
+    </div>
 </div>
 
 <script>
@@ -316,6 +324,11 @@ WIDGET_STATUS = r'''
     const elColeta =
         document.getElementById(
             "rt-coleta"
+        );
+
+    const elPing =
+        document.getElementById(
+            "rt-ping"
         );
 
     function minutosDesde(iso) {
@@ -452,6 +465,29 @@ WIDGET_STATUS = r'''
             elColeta.textContent =
                 texto;
 
+            const minutosPing =
+                dados.minutos_desde_ping;
+
+            let textoPing =
+                "Último ping externo: "
+                + formatarHora(
+                    dados.ultimo_ping_externo
+                );
+
+            if (
+                minutosPing !== null
+                && minutosPing !== undefined
+            ) {
+
+                textoPing +=
+                    " · há "
+                    + minutosPing
+                    + " min";
+            }
+
+            elPing.textContent =
+                textoPing;
+
             if (dados.ultimo_erro) {
 
                 elStatus.innerHTML +=
@@ -550,14 +586,20 @@ def dashboard():
 @app.get("/ping")
 def ping():
 
+    momento = agora_iso()
+
+    ESTADO_RUNTIME[
+        "ultimo_ping_externo"
+    ] = momento
+
     return jsonify(
         {
             "status": "ok",
             "monitor": "taquari",
-            "hora": agora_iso(),
+            "hora": momento,
+            "ping_registrado": True,
         }
     )
-
 
 @app.get("/runtime-status")
 def runtime_status():
@@ -601,6 +643,32 @@ def runtime_status():
         ).total_seconds()
     )
 
+    ultimo_ping = ESTADO_RUNTIME.get(
+        "ultimo_ping_externo"
+    )
+
+    minutos_ping = None
+
+    if ultimo_ping:
+
+        try:
+
+            dt_ping = datetime.fromisoformat(
+                ultimo_ping
+            )
+
+            minutos_ping = int(
+                (
+                    agora
+                    - dt_ping
+                ).total_seconds()
+                / 60
+            )
+
+        except Exception:
+
+            minutos_ping = None
+
     return jsonify(
         {
             "status": "ok",
@@ -628,6 +696,10 @@ def runtime_status():
                 ],
             "uptime_segundos":
                 uptime_segundos,
+            "ultimo_ping_externo":
+                ultimo_ping,
+            "minutos_desde_ping":
+                minutos_ping,
         }
     )
 
@@ -710,3 +782,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
