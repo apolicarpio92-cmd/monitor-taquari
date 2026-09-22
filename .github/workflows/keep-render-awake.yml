@@ -1,0 +1,39 @@
+﻿name: Keep Monitor Taquari Awake
+
+on:
+  schedule:
+    # A cada 5 minutos.
+    # Comeca no minuto 2 para evitar o pico do minuto 0.
+    - cron: "2/5 * * * *"
+
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Ping Render
+        shell: bash
+        run: |
+          set -e
+
+          URL="https://monitor-taquari.onrender.com/ping"
+
+          echo "Consultando: $URL"
+
+          RESPONSE=$(curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 90 \
+            --retry 2 \
+            --retry-delay 5 \
+            "$URL")
+
+          echo "$RESPONSE"
+
+          echo "$RESPONSE" | grep -q '"status":"ok"'
+
+          echo "Monitor Taquari respondeu OK."
