@@ -78,17 +78,92 @@ def numero(valor):
 
 def baixar():
 
-    r = requests.get(
-        URL,
-        timeout=TIMEOUT,
-        headers={
-            "User-Agent":
-                "Mozilla/5.0 "
-                "Monitor-Taquari-V3.1"
-        },
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/153.0.0.0 Safari/537.36"
+        ),
+        "Accept": (
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+        ),
+        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Referer": "https://nivelguaiba.com.br/",
+        "Connection": "keep-alive",
+    }
+
+    retry = Retry(
+        total=3,
+        connect=3,
+        read=3,
+        status=3,
+        backoff_factor=1.5,
+        status_forcelist=[
+            429,
+            500,
+            502,
+            503,
+            504,
+        ],
+        allowed_methods=[
+            "GET",
+        ],
+        raise_on_status=False,
     )
 
-    r.raise_for_status()
+    session = requests.Session()
+
+    session.mount(
+        "https://",
+        HTTPAdapter(
+            max_retries=retry
+        )
+    )
+
+    print(
+        f"[BARRAGENS] Consultando {URL}",
+        flush=True,
+    )
+
+    r = session.get(
+        URL,
+        timeout=TIMEOUT,
+        headers=headers,
+        allow_redirects=True,
+    )
+
+    print(
+        (
+            f"[BARRAGENS] HTTP {r.status_code} | "
+            f"{len(r.content)} bytes | "
+            f"URL final: {r.url}"
+        ),
+        flush=True,
+    )
+
+    if r.status_code != 200:
+
+        trecho = r.text[:300].replace(
+            "\n",
+            " "
+        )
+
+        raise RuntimeError(
+            (
+                f"Nivel Guaiba respondeu HTTP "
+                f"{r.status_code}. "
+                f"Resposta: {trecho}"
+            )
+        )
+
+    if not r.encoding:
+        r.encoding = "utf-8"
 
     soup = BeautifulSoup(
         r.text,
@@ -100,17 +175,15 @@ def baixar():
         strip=True
     )
 
-    ARQ_DEBUG.write_text(
-        texto,
-        encoding="utf-8"
+    print(
+        (
+            "[BARRAGENS] HTML recebido. "
+            f"Texto extraido: {len(texto)} caracteres."
+        ),
+        flush=True,
     )
 
     return soup, texto
-
-
-# ============================================================
-# LOCALIZA BLOCO DA BARRAGEM
-# ============================================================
 
 def bloco_por_html(
     soup,
@@ -786,3 +859,4 @@ if __name__ == "__main__":
             "Variacao %:",
             d["variacao_pct"]
         )
+
