@@ -1,0 +1,734 @@
+
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+>
+
+<meta
+    http-equiv="refresh"
+    content="60"
+>
+
+<title>
+Monitor Taquari V3
+</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #0b1115;
+    color: #eef4f7;
+    font-family:
+        Segoe UI,
+        Arial,
+        sans-serif;
+}
+
+header {
+    padding: 24px 32px;
+    background: #131b21;
+    border-bottom: 1px solid #29343b;
+}
+
+h1 {
+    margin: 0;
+    font-size: 25px;
+}
+
+.atualizado {
+    color: #8899a5;
+    margin-top: 6px;
+}
+
+main {
+    max-width: 1500px;
+    margin: auto;
+    padding: 28px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(300px,1fr)
+        );
+    gap: 18px;
+}
+
+.card {
+    background: #151d23;
+    border: 1px solid #29363e;
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.titulo {
+    color: #899ba6;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+}
+
+.nivel {
+    font-size: 48px;
+    font-weight: 750;
+    margin-top: 10px;
+}
+
+.seta {
+    font-size: 32px;
+}
+
+.hora {
+    color: #93a1aa;
+    margin-top: 4px;
+}
+
+.status {
+    margin-top: 12px;
+    font-weight: 700;
+}
+
+.metricas {
+    display: grid;
+    grid-template-columns:
+        repeat(3,1fr);
+    gap: 9px;
+    margin-top: 18px;
+}
+
+.metricas div,
+.chuva-grid div {
+    background: #0d1418;
+    border-radius: 8px;
+    padding: 11px;
+}
+
+span {
+    display: block;
+    color: #7e909b;
+    font-size: 11px;
+}
+
+strong {
+    display: block;
+    margin-top: 5px;
+}
+
+.previsoes {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(180px,1fr)
+        );
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.previsao-item {
+    background: #0d1418;
+    padding: 14px;
+    border-radius: 9px;
+}
+
+.previsao-item strong {
+    font-size: 23px;
+}
+
+.previsao-item small {
+    color: #83939d;
+    display: block;
+    margin-top: 7px;
+}
+
+.chuva-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2,1fr);
+    gap: 9px;
+    margin-top: 15px;
+}
+
+.prob {
+    color: #899ba5;
+    margin-top: 13px;
+}
+
+.alerta {
+    margin-top: 14px;
+    background: #352812;
+    border-left: 4px solid #e0a33d;
+    padding: 13px;
+    border-radius: 5px;
+}
+
+.secao {
+    margin-top: 26px;
+}
+
+.aviso {
+    margin-top: 25px;
+    padding: 15px;
+    background: #1c2124;
+    border-left: 4px solid #667783;
+    color: #aab5bc;
+}
+
+@media(max-width:700px) {
+
+    .metricas {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>
+Monitor Hidrológico — Rio Taquari
+</h1>
+
+<div class="atualizado">
+V3 · atualizado 22/09/2026 02:19:15
+</div>
+
+</header>
+
+<main>
+
+<div class="grid">
+
+<div class="card">
+
+<div class="titulo">
+SANTA TEREZA
+</div>
+
+<div class="nivel">
+17,16 m
+<span class="seta">
+↑
+</span>
+</div>
+
+<div class="hora">
+22/09/2026 01:45
+</div>
+
+<div class="status">
+ATRASADO
+· dado há 34 min
+</div>
+
+<div class="metricas">
+
+<div>
+<span>30 min</span>
+<strong>
+0,22 m/h
+</strong>
+</div>
+
+<div>
+<span>1 hora</span>
+<strong>
+0,20 m/h
+</strong>
+</div>
+
+<div>
+<span>2 horas</span>
+<strong>
+0,32 m/h
+</strong>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="titulo">
+LINHA JOSÉ JÚLIO
+</div>
+
+<div class="nivel">
+20,11 m
+<span class="seta">
+↓
+</span>
+</div>
+
+<div class="hora">
+22/09/2026 01:30
+</div>
+
+<div class="status">
+ATRASADO
+· dado há 49 min
+</div>
+
+<div class="metricas">
+
+<div>
+<span>Subida 1h</span>
+<strong>
+-0,08 m/h
+</strong>
+</div>
+
+<div>
+<span>Vazão</span>
+<strong>
+8902 m³/s
+</strong>
+</div>
+
+<div>
+<span>Chuva estação</span>
+<strong>
+0,00 mm
+</strong>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+
+
+<div class="secao card">
+
+<div class="titulo">
+ESTIMATIVA EXPERIMENTAL — SANTA TEREZA
+</div>
+
+<div class="previsoes">
+
+
+            <div class="previsao-item">
+                <span>
+                    +1h · 02:45
+                </span>
+
+                <strong>
+                    17,36 m
+                </strong>
+
+                <small>
+                    faixa 17,07
+                    –
+                    17,65 m
+                    · estimativa
+                </small>
+            </div>
+            
+            <div class="previsao-item">
+                <span>
+                    +2h · 03:45
+                </span>
+
+                <strong>
+                    17,49 m
+                </strong>
+
+                <small>
+                    faixa 17,11
+                    –
+                    17,88 m
+                    · estimativa
+                </small>
+            </div>
+            
+            <div class="previsao-item">
+                <span>
+                    +3h · 04:45
+                </span>
+
+                <strong>
+                    17,56 m
+                </strong>
+
+                <small>
+                    faixa 17,09
+                    –
+                    18,03 m
+                    · tendencia
+                </small>
+            </div>
+            
+            <div class="previsao-item">
+                <span>
+                    +6h · 07:45
+                </span>
+
+                <strong>
+                    18,26 m
+                </strong>
+
+                <small>
+                    faixa 17,55
+                    –
+                    18,96 m
+                    · cenario
+                </small>
+            </div>
+            
+
+</div>
+
+</div>
+
+
+
+    <div class="secao">
+
+        <div
+            class="titulo"
+            style="
+                margin-bottom:12px;
+                font-size:14px;
+            "
+        >
+            BARRAGENS — RIO DAS ANTAS
+        </div>
+
+        <div class="grid">
+
+            
+            <div class="card">
+
+                <div class="titulo">
+                    CASTRO ALVES
+                </div>
+
+                <div class="nivel">
+
+                    6259
+
+                    <span
+                        style="
+                            font-size:16px;
+                            font-weight:500;
+                        "
+                    >
+                        m³/s
+                    </span>
+
+                    <span class="seta">
+                        =
+                    </span>
+
+                </div>
+
+                <div class="hora">
+                    saída · 22/09/2026 02:00
+                </div>
+
+                <div class="metricas">
+
+                    <div>
+
+                        <span>Entrada</span>
+
+                        <strong>
+                            5844 m³/s
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>Variação</span>
+
+                        <strong>
+                            aguardando próxima leitura
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>Nível reservatório</span>
+
+                        <strong>
+                            245,58 m
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+            
+            <div class="card">
+
+                <div class="titulo">
+                    MONTE CLARO
+                </div>
+
+                <div class="nivel">
+
+                    9738
+
+                    <span
+                        style="
+                            font-size:16px;
+                            font-weight:500;
+                        "
+                    >
+                        m³/s
+                    </span>
+
+                    <span class="seta">
+                        =
+                    </span>
+
+                </div>
+
+                <div class="hora">
+                    saída · 22/09/2026 02:00
+                </div>
+
+                <div class="metricas">
+
+                    <div>
+
+                        <span>Entrada</span>
+
+                        <strong>
+                            9579 m³/s
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>Variação</span>
+
+                        <strong>
+                            aguardando próxima leitura
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>Nível reservatório</span>
+
+                        <strong>
+                            153,04 m
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+            
+            <div class="card">
+
+                <div class="titulo">
+                    14 DE JULHO
+                </div>
+
+                <div class="nivel">
+
+                    10787
+
+                    <span
+                        style="
+                            font-size:16px;
+                            font-weight:500;
+                        "
+                    >
+                        m³/s
+                    </span>
+
+                    <span class="seta">
+                        =
+                    </span>
+
+                </div>
+
+                <div class="hora">
+                    saída · 22/09/2026 02:00
+                </div>
+
+                <div class="metricas">
+
+                    <div>
+
+                        <span>Entrada</span>
+
+                        <strong>
+                            10384 m³/s
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>Variação</span>
+
+                        <strong>
+                            aguardando próxima leitura
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>Nível reservatório</span>
+
+                        <strong>
+                            107,42 m
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+            
+
+        </div>
+
+    </div>
+    
+
+<div class="secao grid">
+
+
+        <div class="card">
+            <div class="titulo">
+                CHUVA — Cabeceiras
+            </div>
+
+            <div class="chuva-grid">
+
+                <div>
+                    <span>+1h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+                <div>
+                    <span>+3h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+                <div>
+                    <span>+6h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+                <div>
+                    <span>+12h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+            </div>
+
+            <div class="prob">
+                Prob. máx. 6h:
+                22%
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="titulo">
+                CHUVA — Santa Tereza
+            </div>
+
+            <div class="chuva-grid">
+
+                <div>
+                    <span>+1h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+                <div>
+                    <span>+3h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+                <div>
+                    <span>+6h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+                <div>
+                    <span>+12h</span>
+                    <strong>
+                        0,00 mm
+                    </strong>
+                </div>
+
+            </div>
+
+            <div class="prob">
+                Prob. máx. 6h:
+                0%
+            </div>
+        </div>
+        
+
+</div>
+
+
+<div class="aviso">
+
+As projeções são experimentais e não substituem
+alertas oficiais. A faixa aumenta conforme o horizonte
+porque a incerteza hidrológica também aumenta.
+A influência das estações a montante e das barragens
+ainda será calibrada com dados observados.
+
+</div>
+
+</main>
+
+</body>
+
+</html>

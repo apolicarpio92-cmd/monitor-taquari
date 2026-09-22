@@ -1,0 +1,457 @@
+Barragens do Taquari-Antas: nível de Castro Alves, Monte Claro e 14 de Julho
+Pular para o conteúdo
+Nível Guaíba
+Bacia Uruguai
+Início
+/
+Reservatórios
+/
+Taquari-Antas
+Nível das barragens do Taquari-Antas
+leitura de 02:00
+As barragens estão baixando o nível e soltando menos água.
+Todas as três estão soltando menos água, e o nível baixa em todas.
+desce da cadeia agora
+10.787
+m³/s
+↓
+baixando de 11.602 em 2 h
+típico 168
+máx 12.194 · mai/24
+saindo a mais do que entra
+976
+m³/s
+A cadeia de uma vez
+↓
+Rio em Santa Tereza
+→
+Jacuí
+Taquari-Antas
+Castro Alves, Monte Claro e 14 de Julho, no rio das Antas — que passa a se chamar Taquari logo abaixo delas. Leitura de hora em hora, publicada pela
+CERAN
+.
+A cadeia de uma vez
+montante → jusante
+Castro Alves
+→
+entra 5.844
+sai
+6.259
+m³/s
+→
++3.320
+Monte Claro
+→
+entra 9.579
+sai
+9.738
+m³/s
+→
++646
+14 de Julho
+→
+entra 10.384
+sai
+10.787
+m³/s
+→
+rio em Santa Tereza
+17,00
+m
+subindo 72 cm/h
+= chuva e afluentes do trecho: o que
+sai
+de uma barragem + a gota = o que
+entra
+na seguinte.
+          As duas barras de cada box comparam os dois números: a de baixo mais comprida = saindo mais do que entra;
+          iguais = entra e sai o mesmo; a de cima mais comprida = segurando água. Tudo em m³/s.
+Últimos 30 dias, lado a lado
+leitura diária · SAR/ANA · escala própria por barragem
+entra
+sai
+típico
+enchendo
+esvaziando
+Castro Alves
+pico 1.171 · entra ≈ sai
+Monte Claro
+pico 1.654 · entra ≈ sai
+14 de Julho
+pico 1.664 · entra ≈ sai
+23 ago
+7 set
+hoje
+O gráfico do rio mostra a água que
+já chegou
+.
+O reservatório mostra a que
+ainda vem
+, e se está sendo segurada lá em cima.
+Barragem por barragem
+montante → jusante
+Essencial
+Técnico
+O essencial de cada barragem. Toque em Técnico para ver as cotas, o volume útil e as contas.
+Passando água direto pelo vertedouro agora:
+Castro Alves
+,
+Monte Claro
+e
+14 de Julho
+.
+1
+Castro Alves
+Rio das Antas
+entra
+5.844
+m³/s
+Está soltando mais do que recebe.
+soltando 415 m³/s a mais
+verte 100% — parou de segurar
+acima do máx. normal (comum)
+hoje 02:00 ·
+CERAN
+· horária
+Nível
+245,58 m
+, baixando 58 cm em 2 h.
+faixa de operação
+↓
+baixando
+58 cm em 2 h
+mín. normal
+239,00
+máx. normal
+240,00
+maximorum
+246,36
+Está
+5,58 m acima do máximo normal
+de operação — situação comum nesta usina. Faltam 0,78 m para o maximorum, o limite de projeto.
+entra
+5.844
+m³/s
+▼
+baixando nível
+sai
+6.259
+m³/s
+Parou de segurar: 100% da saída passa direto.
+Daqui para baixo, o que chegar segue para a próxima cidade sem ser retido.
+Esta usina acumula 4,60 hm³ de volume útil, o suficiente para segurar cerca de 12 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
+Ver detalhe deste reservatório
++
+nível a montante
+· últimas 12 horas
+↓
+baixando
+58 cm em 2 h
+de 244,44 a 247,16 m nesta janela
+amplitude 2,72 m
+Toda esta janela está
+acima do máximo normal
+de operação (240,00 m) — a faixa hachurada embaixo marca o lado dele. A escala vertical é ampliada e mede no mínimo 10% da faixa de operação desta usina, para que uma oscilação pequena não pareça uma queda.
+por onde a água sai
+6.259 m³/s passam direto.
+Sai pelo vertedouro, que não tem controle de vazão. Só acontece quando o reservatório não consegue mais segurar.
+entra e sai
+· últimas 12 horas
+sai
+↓
+baixando
+de 7.326 para 6.259 m³/s em 2 h
+entra
+sai
+máx 9.832 m³/s · 21/09 → 02:00
+últimos 15 dias · ANA/SAR
+máx 758 m³/s
+07/09 → 21/09
+uma leitura por dia, das 00h
+O histórico longo desta usina só existe em ritmo diário, no SAR da ANA. Fica separado do gráfico de cima porque uma barra de hora e uma de dia não podem ter o mesmo tamanho.
+medido
+A saída caiu 506 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
+6.259
+m³/s
+descem daqui
+↓
+baixando
+de 7.326 para 6.259 m³/s em 2 h
+Entre Castro Alves e Monte Claro, a bacia acrescenta
++3.321 m³/s
+de chuva e afluentes.
+contribuição da bacia
+· 15 horas
+→ estável
+Barra abaixo da linha: chegou menos do que saiu. Acontece pelo tempo que a água leva no trecho.
+2
+Monte Claro
+Rio das Antas
+entra
+9.579
+m³/s
+Entra e sai praticamente o mesmo. Não segura mais nada.
+entra e sai o mesmo
+verte 100% — parou de segurar
+acima do máx. normal (comum)
+hoje 02:00 ·
+CERAN
+· horária
+Nível
+153,04 m
+, baixando 68 cm em 2 h.
+faixa de operação
+↓
+baixando
+68 cm em 2 h
+mín. normal
+147,00
+máx. normal
+148,00
+maximorum
+155,00
+Está
+5,04 m acima do máximo normal
+de operação — situação comum nesta usina. Faltam 1,96 m para o maximorum, o limite de projeto.
+entra
+9.579
+m³/s
+=
+o que entra, sai
+sai
+9.738
+m³/s
+Parou de segurar: 100% da saída passa direto.
+Esta usina acumula 1,46 hm³ de volume útil, o suficiente para segurar cerca de 2 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
+Ver detalhe deste reservatório
++
+nível a montante
+· últimas 12 horas
+↓
+baixando
+68 cm em 2 h
+de 151,97 a 154,33 m nesta janela
+amplitude 2,36 m
+Toda esta janela está
+acima do máximo normal
+de operação (148,00 m) — a faixa hachurada embaixo marca o lado dele.
+por onde a água sai
+9.738 m³/s passam direto.
+entra e sai
+· últimas 12 horas
+sai
+↓
+baixando
+de 10.798 para 9.738 m³/s em 2 h
+entra
+sai
+máx 11.963 m³/s · 21/09 → 02:00
+últimos 15 dias · ANA/SAR
+máx 1.265 m³/s
+07/09 → 21/09
+uma leitura por dia, das 00h
+medido
+A saída caiu 585 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
+9.738
+m³/s
+descem daqui
+↓
+baixando
+de 10.798 para 9.738 m³/s em 2 h
+Entre Monte Claro e 14 de Julho, a bacia acrescenta
++646 m³/s
+de chuva e afluentes.
+contribuição da bacia
+· 15 horas
+→ estável
+3
+14 de Julho
+Rio das Antas
+entra
+10.384
+m³/s
+Está soltando mais do que recebe.
+soltando 403 m³/s a mais
+verte 100% — parou de segurar
+acima do máx. normal (comum)
+hoje 02:00 ·
+CERAN
+· horária
+Nível
+107,42 m
+, baixando 44 cm em 2 h.
+faixa de operação
+↓
+baixando
+44 cm em 2 h
+mín. normal
+103,00
+máx. normal
+104,00
+maximorum
+110,15
+Está
+3,42 m acima do máximo normal
+de operação — situação comum nesta usina. Faltam 2,73 m para o maximorum, o limite de projeto.
+entra
+10.384
+m³/s
+▼
+baixando nível
+sai
+10.787
+m³/s
+Parou de segurar: 100% da saída passa direto.
+Esta usina acumula 4,71 hm³ de volume útil, o suficiente para segurar cerca de 7 min da vazão que está saindo agora. A fonte não publica a porcentagem cheia dela.
+Ver detalhe deste reservatório
++
+nível a montante
+· últimas 12 horas
+↓
+baixando
+44 cm em 2 h
+de 106,54 a 108,09 m nesta janela
+amplitude 1,55 m
+Toda esta janela está
+acima do máximo normal
+de operação (104,00 m) — a faixa hachurada embaixo marca o lado dele.
+por onde a água sai
+10.787 m³/s passam direto.
+entra e sai
+· últimas 12 horas
+sai
+↓
+baixando
+de 11.602 para 10.787 m³/s em 2 h
+entra
+sai
+máx 11.893 m³/s · 21/09 → 02:00
+últimos 15 dias · ANA/SAR
+máx 1.247 m³/s
+07/09 → 21/09
+uma leitura por dia, das 00h
+medido
+A saída caiu 455 m³/s da leitura anterior para esta. Não há projeção: o site mostra o que o operador publicou.
+O que está saindo da cadeia agora
+10.787
+m³/s
+↓
+baixando
+de 11.602 para 10.787 m³/s em 2 h
+Sai de 14 de Julho, a última barragem antes de Santa Tereza.
+Daqui em diante o dado é de rio, medido a cada 15 minutos.
+o que sai da cadeia chega em
+Santa Tereza
+17,00 m
+subindo 72 cm/h · leitura de 01:00
+De 14 de Julho até as primeiras cidades do Taquari o trecho é curto. O que sai agora chega em poucas horas.
+Ver o gráfico do rio em Santa Tereza
+→
+Depois seguem:
+Muçum
+·
+Encantado
+·
+Roca Sales
+·
+Lajeado
+·
+Bom Retiro do Sul
+·
+Taquari
+.
+Todas as cidades monitoradas no
+nível do Rio Taquari
+.
+      As barragens da outra cadeia ficam em
+reservatórios do Jacuí
+.
+Jacuí
+5 reservatórios, diário
+Taquari-Antas
+3 reservatórios, de hora em hora
+Vazão
+(m³/s)
+: quanta água passa por segundo — o que entra na barragem e o que sai dela.
+Nível
+(m)
+: a altura da água represada. Cada usina mede na referência dela, então o número de uma não se compara com o da outra — só consigo mesma, ao longo do tempo.
+Volume útil
+(%): quanto do armazenamento já está ocupado. Vem calculado pela fonte, e não é a altura da água em porcentagem: cada 10 cm de nível valem mais volume quanto mais cheio está o reservatório, porque ele alarga conforme enche. Acima de 100% a usina passou do nível máximo de operação.
+Máximo normal
+: o teto da faixa em que a usina opera no dia a dia. Ficar acima dele é comum e não é emergência — quatro das oito passam boa parte do tempo assim.
+Máximo maximorum
+: a cota mais alta prevista no projeto da barragem, para a cheia extrema. Chegar perto dela é raro: em 946 dias de leituras, duas usinas passaram, nos dias 2 e 3 de maio de 2024, e a estrutura resistiu nas duas.
+Verter
+: a água sair pelo vertedouro. Faz parte da operação normal e acontece quase todo dia em várias delas. Não confunda com a barragem estar no limite.
+Os dois não andam no mesmo ritmo: num reservatório grande, uma diferença pequena entre o que entra e o que sai leva dias para mexer no nível.
+Perguntas frequentes sobre os reservatórios
+O que os números significam e de onde eles vêm.
+Quais barragens do Taquari-Antas estão vertendo agora?
+Castro Alves, Monte Claro e 14 de Julho. Verter é a água passar por cima do vertedouro. Essa parte da saída não tem controle de vazão.
+Qual o nível dos reservatórios do Taquari-Antas agora?
+Castro Alves 245,58 m (hoje 02:00). Monte Claro 153,04 m (hoje 02:00). 14 de Julho 107,42 m (hoje 02:00). Cada usina mede o nível na própria referência. Os números não se comparam entre usinas nem com o nível do rio nas cidades.
+Por que olhar os reservatórios e não só o nível do rio?
+O reservatório mostra a água antes de ela chegar na cidade. Na cheia de maio de 2024, o Passo Real recebeu 4.584 m³/s no dia 2 e soltou 2.215. No dia 4 já soltava 4.656, mais do que entrava. A régua das cidades abaixo só registrou isso horas depois. O que sai de um reservatório agora é o que chega na cidade abaixo nas horas seguintes — é a informação mais antecipada que este site tem.
+Por que a bacia se chama Taquari-Antas?
+Porque é o mesmo rio, com dois nomes ao longo do curso. As três barragens — Castro Alves, Monte Claro e 14 de Julho — ficam no trecho chamado rio das Antas. Depois delas o rio recebe o Carreiro e passa a se chamar Taquari, e é com esse nome que ele corre por Santa Tereza, Muçum, Encantado, Roca Sales, Lajeado, Bom Retiro do Sul e Taquari. O nome composto é o oficial da bacia justamente porque nenhum dos dois sozinho descreve o rio inteiro. A água que sai do 14 de Julho é a mesma que chega nessas cidades.
+O que significam máximo normal e máximo maximorum?
+São duas cotas do projeto de cada barragem. O máximo normal é o teto da faixa em que a usina opera no dia a dia: passar dele é comum e não indica emergência, e quatro das oito passam boa parte do tempo acima. O máximo maximorum é a cota mais alta prevista no projeto, dimensionada para a cheia extrema. Chegar perto dela é raro: em 946 dias de leituras, duas usinas passaram do maximorum, Monte Claro e 14 de Julho, nos dias 2 e 3 de maio de 2024, no pico da enchente histórica, e a estrutura resistiu nas duas. Nenhuma das duas cotas é a altura da barragem: a crista fica acima do maximorum.
+O que significa um reservatório verter?
+Verter é a água passar por cima do vertedouro. Essa parte da saída não tem controle: sai o que vier. Só acontece quando o reservatório não consegue mais segurar o que está chegando.
+Qual a diferença entre vazão turbinada e vazão vertida?
+Turbinada é a água que passa pelas turbinas. É controlada e tem limite físico. Vertida é a que passa pelo vertedouro, sem controle. Somadas, dão a defluência, que é o total que sai.
+Como saber se um reservatório está segurando ou soltando água?
+Compare a afluência com a defluência. Entra mais do que sai: está segurando e enchendo. Sai mais do que entra: está soltando, em geral para abrir espaço. Entra e sai o mesmo: não segura mais nada, o que chega passa.
+De quanto em quanto tempo estes dados são atualizados?
+Castro Alves, Monte Claro e 14 de Julho: a cada hora, pela CERAN. Dona Francisca: a cada hora, pela DFESA. Ernestina, Passo Real, Jacuí e Itaúba: uma vez por dia, pelo SAR da ANA, com a situação das 00h.
+Por que alguns reservatórios mostram a hora e outros mostram 00h?
+Porque cada operador publica no seu ritmo. Os quatro primeiros do Jacuí vêm do SAR, que divulga uma leitura por dia. É o único número que essas usinas publicam, e não é um dado atrasado. Os do Taquari e a Dona Francisca vêm de hora em hora.
+Quais reservatórios ficam acima de Cachoeira do Sul?
+Na ordem do rio: Ernestina, Passo Real, Jacuí, Itaúba e Dona Francisca. Depois a água segue para Cachoeira do Sul, Rio Pardo e São Jerônimo. No Taquari a sequência é Castro Alves, Monte Claro e 14 de Julho, e depois Santa Tereza, Muçum, Encantado, Roca Sales, Lajeado, Bom Retiro do Sul e Taquari.
+Como o volume útil é calculado a partir do nível?
+A ANA publica o volume útil já calculado. Ele depende do nível, mas não é proporcional a ele: o reservatório alarga conforme enche, então a mesma subida de nível vale mais volume quando ele já está cheio. Na Ernestina, cada 10 cm de nível valem 1,0% de volume na cota 486 m e 3,3% na cota 490 m. O cálculo usa a curva cota-área-volume de cada usina, que depende do formato do terreno alagado e não é publicada.
+Volume útil em 100% significa enchente?
+Não. Volume útil é quanto do armazenamento está ocupado. Um reservatório cheio perde a capacidade de segurar uma cheia nova, mas isso só vira enchente se continuar chovendo. O sinal mais direto é a vazão vertida.
+Quanto tempo a água leva do reservatório até a cidade?
+Depende da distância, da declividade e de quanto o rio já está cheio. Entre Dona Francisca e Cachoeira do Sul são cerca de dez horas. No Taquari o trecho é mais curto. Use como referência, não como previsão: o aviso oficial é o da Defesa Civil.
+Estes dados são oficiais?
+Sim. Vêm da CERAN, da DFESA e do SAR da ANA. O site coleta, organiza e explica. Não corrige nem estima os números publicados.
+O nível do reservatório é o mesmo que o nível do rio na cidade?
+Não. O nível do reservatório é a cota da água na barragem, medida na referência daquela usina. O nível do rio na cidade é a altura da régua naquele ponto. Os dois aparecem em metros e não se comparam. Para saber se a cidade está perto da cota de inundação, veja a página da cidade.
+As barragens do Taquari-Antas correm risco de romper?
+Este site não monitora a estrutura das barragens e não tem dado para responder isso. O que ele mostra é o que os operadores publicam: quanto entra, quanto sai e o nível. Segurança estrutural de barragem é responsabilidade do operador e da fiscalização federal, registrada no Sistema Nacional de Informações sobre Segurança de Barragens (SNISB). Em emergência, a Defesa Civil atende no 199.
+Quem opera estas barragens e quem publica os dados?
+Castro Alves, Monte Claro e 14 de Julho são operadas pela CERAN, Companhia Energética Rio das Antas, que publica de hora em hora. O histórico diário mais longo das três vem do SAR da ANA.
+O hachurado marca a água que sai sem controle. A cor nunca é o único sinal.
+Uma usina com leitura das 00h ao lado de outra das 20h não é falha de carregamento. É o que cada operador publica.
+Fontes:
+CERAN
+(Castro Alves, Monte Claro, 14 de Julho) ·
+DFESA
+(Dona Francisca) ·
+ANA/SAR
+(Ernestina, Passo Real, Jacuí, Itaúba).
+      Cotas de referência:
+ONS
+, cadastro de informações operacionais hidráulicas da bacia do Jacuí.
+      Atualizado em 2026-09-22 02:06.
+Projeto voluntário e gratuito para apoiar a comunidade e a Defesa Civil no acompanhamento dos rios. Dados públicos de
+SGB/CPRM
+e
+ANA
+. Em cheias, sensores podem falhar ou atrasar — consulte sempre a
+Defesa Civil/RS
+.
+Metodologia
+·
+Barragens
+·
+Glossário
+·
+Privacidade
+·
+Termos de Uso
+·
+Início
+© 2026 Mahalo Ventures — Desenvolvimento voluntário. Dados públicos.
