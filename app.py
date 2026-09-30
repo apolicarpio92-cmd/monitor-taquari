@@ -33,6 +33,12 @@ from turso_storage import (
 )
 
 
+from previsao_semana import (
+    obter_previsao_segura,
+    gerar_html_previsao_semana,
+)
+
+
 BASE_DIR = Path(__file__).resolve().parent
 
 # ============================================================
@@ -58,6 +64,8 @@ _lock = threading.Lock()
 _coletor_iniciado = False
 
 INICIO_PROCESSO = datetime.now()
+
+PREVISAO_SEMANA = None
 
 ESTADO_RUNTIME = {
     "ciclo_em_execucao": False,
@@ -609,6 +617,38 @@ def dashboard():
         errors="replace",
     )
 
+    html_previsao = (
+        gerar_html_previsao_semana(
+            PREVISAO_SEMANA
+        )
+    )
+
+    # Coloca a previsao antes do aviso final do dashboard.
+    marcador_previsao = (
+        '<div class="aviso">'
+    )
+
+    if (
+        marcador_previsao in html
+        and 'id="previsao-semanal-taquari"'
+        not in html
+    ):
+
+        html = html.replace(
+            marcador_previsao,
+            html_previsao
+            + "\n"
+            + marcador_previsao,
+            1,
+        )
+
+    elif (
+        'id="previsao-semanal-taquari"'
+        not in html
+    ):
+
+        html += html_previsao
+
     if "</body>" in html:
 
         html = html.replace(
@@ -844,5 +884,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
 
 
