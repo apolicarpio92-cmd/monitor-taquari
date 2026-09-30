@@ -617,9 +617,47 @@ def dashboard():
         errors="replace",
     )
 
+    # ========================================================
+    # PREVISAO METEOROLOGICA
+    #
+    # Se o coletor ainda nao carregou a previsao, consulta
+    # diretamente. O proprio modulo possui cache de 30 min.
+    # ========================================================
+
+    previsao_exibir = PREVISAO_SEMANA
+
+    if previsao_exibir is None:
+
+        try:
+
+            previsao_exibir = (
+                obter_previsao_segura()
+            )
+
+            print(
+                "[METEO] Previsao carregada "
+                "sob demanda pelo dashboard.",
+                flush=True,
+            )
+
+        except Exception as e:
+
+            previsao_exibir = {
+                "ok": False,
+                "erro": str(e),
+                "dias": [],
+            }
+
+            print(
+                "[METEO] Erro ao carregar "
+                "previsao pelo dashboard:",
+                e,
+                flush=True,
+            )
+
     html_previsao = (
         gerar_html_previsao_semana(
-            PREVISAO_SEMANA
+            previsao_exibir
         )
     )
 
@@ -884,6 +922,7 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
+
 
 
 
