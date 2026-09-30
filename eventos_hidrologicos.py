@@ -24,6 +24,15 @@ ARQ_TELEMETRIA = (
 LATITUDE_CABECEIRAS = -28.50
 LONGITUDE_CABECEIRAS = -50.95
 
+# Referencia meteorologica local.
+#
+# Nesta etapa usamos Santa Tereza como proxy meteorologico
+# da influencia local / Arroio Barra Mansa.
+#
+# Nao representa um pluviometro instalado no arroio.
+LATITUDE_SANTA_LOCAL = -29.1781
+LONGITUDE_SANTA_LOCAL = -51.7322
+
 URL_HISTORICO_METEO = (
     "https://historical-forecast-api.open-meteo.com"
     "/v1/forecast"
@@ -310,6 +319,109 @@ def buscar_chuva_cabeceiras(
         )
 
     return resultado
+
+
+
+def buscar_chuva_historica_local(
+    inicio,
+    fim,
+    latitude,
+    longitude,
+):
+
+    params = {
+        "latitude":
+            latitude,
+
+        "longitude":
+            longitude,
+
+        "timezone":
+            TIMEZONE,
+
+        "start_date":
+            inicio.strftime(
+                "%Y-%m-%d"
+            ),
+
+        "end_date":
+            fim.strftime(
+                "%Y-%m-%d"
+            ),
+
+        "hourly":
+            "precipitation",
+    }
+
+    resposta = requests.get(
+        URL_HISTORICO_METEO,
+        params=params,
+        timeout=20,
+    )
+
+    resposta.raise_for_status()
+
+    dados = resposta.json()
+
+    hourly = dados.get(
+        "hourly",
+        {},
+    )
+
+    tempos = hourly.get(
+        "time",
+        [],
+    )
+
+    chuvas = hourly.get(
+        "precipitation",
+        [],
+    )
+
+    resultado = []
+
+    for i, texto_data in enumerate(
+        tempos
+    ):
+
+        try:
+
+            dt = datetime.fromisoformat(
+                texto_data
+            )
+
+            mm = float(
+                chuvas[i]
+                or 0
+            )
+
+        except Exception:
+            continue
+
+        resultado.append(
+            {
+                "data_hora":
+                    dt,
+
+                "mm":
+                    mm,
+            }
+        )
+
+    return resultado
+
+
+def buscar_chuva_local_santa(
+    inicio,
+    fim,
+):
+
+    return buscar_chuva_historica_local(
+        inicio,
+        fim,
+        LATITUDE_SANTA_LOCAL,
+        LONGITUDE_SANTA_LOCAL,
+    )
 
 
 # ============================================================
@@ -863,6 +975,204 @@ def consolidar_mesmo_pico(
 
 
 # ============================================================
+# INFLUENCIA LOCAL / BARRA MANSA
+# ============================================================
+
+def analisar_influencia_local(
+    evento,
+    chuva_local,
+):
+
+    resposta_santa = (
+        evento
+        .get(
+            "_resposta_santa",
+            {},
+        )
+        .get(
+            "resposta"
+        )
+    )
+
+    if not chuva_local:
+
+        return {
+            "nivel":
+                "SEM DADOS",
+
+            "chuva_6h_mm":
+                None,
+
+            "chuva_12h_mm":
+                None,
+
+            "max_mm_h":
+                None,
+
+            "inicio_janela":
+                None,
+
+            "fim_janela":
+                None,
+
+            "interpretacao":
+                (
+                    "Não há dados meteorológicos locais "
+                    "suficientes para avaliar a influência "
+                    "do entorno de Santa Tereza."
+                ),
+        }
+
+    if resposta_santa:
+
+        fim_janela = resposta_santa[
+            "data_hora"
+        ]
+
+    else:
+
+        fim_janela = evento[
+            "fim"
+        ]
+
+    inicio_6h = (
+        fim_janela
+        - timedelta(
+            hours=6
+        )
+    )
+
+    inicio_12h = (
+        fim_janela
+        - timedelta(
+            hours=12
+        )
+    )
+
+    registros_6h = [
+        r
+        for r in chuva_local
+        if (
+            inicio_6h
+            <= r["data_hora"]
+            <= fim_janela
+        )
+    ]
+
+    registros_12h = [
+        r
+        for r in chuva_local
+        if (
+            inicio_12h
+            <= r["data_hora"]
+            <= fim_janela
+        )
+    ]
+
+    chuva_6h = sum(
+        r["mm"]
+        for r in registros_6h
+    )
+
+    chuva_12h = sum(
+        r["mm"]
+        for r in registros_12h
+    )
+
+    max_hora = max(
+        (
+            r["mm"]
+            for r in registros_6h
+        ),
+        default=0,
+    )
+
+    # --------------------------------------------------------
+    # INDICADOR EXPERIMENTAL
+    #
+    # Nao representa causalidade comprovada.
+    # Apenas mede se houve chuva local relevante
+    # imediatamente antes da resposta de Santa Tereza.
+    # --------------------------------------------------------
+
+    if (
+        chuva_6h >= 15
+        or max_hora >= 5
+    ):
+
+        nivel = "ALTA"
+
+        interpretacao = (
+            "Houve chuva local relevante nas horas "
+            "anteriores à resposta de Santa Tereza. "
+            "A subida pode ter contribuição importante "
+            "da drenagem local e do Arroio Barra Mansa."
+        )
+
+    elif (
+        chuva_6h >= 5
+        or chuva_12h >= 10
+        or max_hora >= 2
+    ):
+
+        nivel = "MÉDIA"
+
+        interpretacao = (
+            "Houve precipitação local antes da resposta "
+            "do rio. A influência do entorno de Santa Tereza "
+            "e do Barra Mansa deve ser considerada junto "
+            "com as contribuições de montante."
+        )
+
+    else:
+
+        nivel = "BAIXA"
+
+        interpretacao = (
+            "Foi registrada pouca chuva local antes "
+            "da resposta de Santa Tereza. Neste evento, "
+            "a contribuição local aparenta ser menor "
+            "que as influências vindas de montante."
+        )
+
+    return {
+        "nivel":
+            nivel,
+
+        "chuva_6h_mm":
+            round(
+                chuva_6h,
+                1,
+            ),
+
+        "chuva_12h_mm":
+            round(
+                chuva_12h,
+                1,
+            ),
+
+        "max_mm_h":
+            round(
+                max_hora,
+                1,
+            ),
+
+        "inicio_janela":
+            inicio_6h.isoformat(
+                timespec="minutes"
+            ),
+
+        "fim_janela":
+            fim_janela.isoformat(
+                timespec="minutes"
+            ),
+
+        "interpretacao":
+            interpretacao,
+    }
+
+
+# ============================================================
 # CLASSIFICACAO DO EVENTO
 # ============================================================
 
@@ -1019,6 +1329,18 @@ def avaliar_confianca_evento(
         or 0
     )
 
+    influencia_local = evento.get(
+        "_influencia_local",
+        {},
+    )
+
+    nivel_influencia_local = (
+        influencia_local.get(
+            "nivel",
+            "SEM DADOS",
+        )
+    )
+
     # --------------------------------------------------------
     # 1. RESPOSTA MUITO PROXIMA DO INICIO DA CHUVA
     #
@@ -1066,6 +1388,50 @@ def avaliar_confianca_evento(
                 "o início da chuva e a resposta do rio."
             )
         )
+
+    # --------------------------------------------------------
+    # INFLUENCIA LOCAL EM RESPOSTAS RAPIDAS
+    # --------------------------------------------------------
+
+    if (
+        tempo_resposta is not None
+        and tempo_resposta < 120
+    ):
+
+        if nivel_influencia_local == "ALTA":
+
+            pontos -= 15
+
+            motivos.append(
+                (
+                    "Houve chuva local forte antes da resposta. "
+                    "A subida rápida pode ter contribuição "
+                    "do entorno de Santa Tereza / Barra Mansa, "
+                    "reduzindo a segurança de atribuí-la "
+                    "somente às cabeceiras."
+                )
+            )
+
+        elif nivel_influencia_local == "MÉDIA":
+
+            pontos -= 8
+
+            motivos.append(
+                (
+                    "Houve chuva local moderada antes da resposta; "
+                    "ela pode ter contribuído para a subida rápida."
+                )
+            )
+
+        elif nivel_influencia_local == "BAIXA":
+
+            motivos.append(
+                (
+                    "A chuva local foi baixa antes da resposta, "
+                    "reduzindo a evidência de contribuição imediata "
+                    "do Barra Mansa neste evento."
+                )
+            )
 
     # --------------------------------------------------------
     # 2. TENDENCIA ANTES DO EVENTO
@@ -1244,6 +1610,14 @@ def serializar_evento(
         )
     )
 
+    influencia_local = evento.get(
+        "_influencia_local",
+        {
+            "nivel":
+                "SEM DADOS"
+        },
+    )
+
     tempo_resposta_santa = (
         diferenca_minutos(
             inicio,
@@ -1323,6 +1697,9 @@ def serializar_evento(
 
         "confianca":
             confianca,
+
+        "influencia_local":
+            influencia_local,
 
         "linha": {
             "baseline":
@@ -1519,6 +1896,23 @@ def analisar_eventos_hidrologicos(
         chuva
     )
 
+    chuva_local = []
+
+    try:
+
+        chuva_local = buscar_chuva_local_santa(
+            inicio,
+            fim_telemetria,
+        )
+
+    except Exception as e:
+
+        print(
+            "[EVENTOS] Chuva local indisponivel:",
+            e,
+            flush=True,
+        )
+
     santa = serie_estacao(
         telemetria,
         "86472600",
@@ -1543,6 +1937,15 @@ def analisar_eventos_hidrologicos(
         santa,
         linha,
     )
+
+    for evento in consolidados:
+
+        evento[
+            "_influencia_local"
+        ] = analisar_influencia_local(
+            evento,
+            chuva_local,
+        )
 
     eventos = [
         serializar_evento(
@@ -1623,6 +2026,12 @@ def analisar_eventos_hidrologicos(
             (
                 "Estimativa meteorológica "
                 "histórica — Open-Meteo"
+            ),
+
+        "fonte_chuva_local":
+            (
+                "Santa Tereza como referência meteorológica "
+                "local / proxy do Arroio Barra Mansa — Open-Meteo"
             ),
 
         "periodo": {
@@ -1883,6 +2292,53 @@ def gerar_html_eventos_hidrologicos():
     margin-top:2px;
 }
 
+
+.evento-influencia-local {
+    margin-top:8px;
+    padding:9px 10px;
+    border-radius:8px;
+    background:#091216;
+    border:1px solid #263740;
+}
+
+.evento-influencia-topo {
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+}
+
+.evento-influencia-topo span {
+    color:#7693a1;
+    font-size:9px;
+}
+
+.evento-influencia-topo strong {
+    font-size:10px;
+}
+
+.influencia-alta {
+    color:#efc574;
+}
+
+.influencia-media {
+    color:#a8cddd;
+}
+
+.influencia-baixa {
+    color:#a9dfc3;
+}
+
+.influencia-sem-dados {
+    color:#9baab1;
+}
+
+.evento-influencia-texto {
+    margin-top:5px;
+    color:#718d9a;
+    font-size:9px;
+    line-height:1.5;
+}
 
 .evento-motivo {
     color:#718d9a;
@@ -2290,6 +2746,41 @@ async function carregarEventos() {
                         ? confianca.motivos
                         : [];
 
+                    const influencia =
+                        evento.influencia_local
+                        || {};
+
+                    const nivelInfluencia =
+                        influencia.nivel
+                        || "SEM DADOS";
+
+                    let classeInfluencia =
+                        "influencia-sem-dados";
+
+                    if (
+                        nivelInfluencia === "ALTA"
+                    ) {
+
+                        classeInfluencia =
+                            "influencia-alta";
+                    }
+
+                    else if (
+                        nivelInfluencia === "MÉDIA"
+                    ) {
+
+                        classeInfluencia =
+                            "influencia-media";
+                    }
+
+                    else if (
+                        nivelInfluencia === "BAIXA"
+                    ) {
+
+                        classeInfluencia =
+                            "influencia-baixa";
+                    }
+
                     let agrupamento = "";
 
                     if (
@@ -2402,6 +2893,74 @@ async function carregarEventos() {
                                 : ""
                             }
 
+                            <div class="evento-influencia-local">
+
+                                <div class="evento-influencia-topo">
+
+                                    <span>
+                                        CHUVA LOCAL / BARRA MANSA
+                                    </span>
+
+                                    <strong
+                                        class="${classeInfluencia}"
+                                    >
+                                        INFLUÊNCIA:
+                                        ${nivelInfluencia}
+                                    </strong>
+
+                                    ${
+                                        influencia.chuva_6h_mm !== null
+                                        && influencia.chuva_6h_mm !== undefined
+                                        ? `
+                                            <span>
+                                                · últimas 6h:
+                                                ${Number(
+                                                    influencia.chuva_6h_mm
+                                                ).toLocaleString(
+                                                    "pt-BR",
+                                                    {
+                                                        minimumFractionDigits:1,
+                                                        maximumFractionDigits:1
+                                                    }
+                                                )}
+                                                mm
+                                            </span>
+                                          `
+                                        : ""
+                                    }
+
+                                    ${
+                                        influencia.max_mm_h !== null
+                                        && influencia.max_mm_h !== undefined
+                                        ? `
+                                            <span>
+                                                · pico horário:
+                                                ${Number(
+                                                    influencia.max_mm_h
+                                                ).toLocaleString(
+                                                    "pt-BR",
+                                                    {
+                                                        minimumFractionDigits:1,
+                                                        maximumFractionDigits:1
+                                                    }
+                                                )}
+                                                mm/h
+                                            </span>
+                                          `
+                                        : ""
+                                    }
+
+                                </div>
+
+                                <div class="evento-influencia-texto">
+                                    ${
+                                        influencia.interpretacao
+                                        || "Sem interpretação local disponível."
+                                    }
+                                </div>
+
+                            </div>
+
                             <div class="evento-grid">
 
                                 <div class="evento-dado">
@@ -2484,6 +3043,9 @@ async function carregarEventos() {
                 informação e não alteram a mediana.
                 Chuva das cabeceiras:
                 ${dados.fonte_chuva}.
+                A chuva local usa Santa Tereza como referência
+                meteorológica do entorno / proxy do Arroio Barra Mansa;
+                não representa medição direta dentro do arroio.
                 A classificação de confiança indica apenas
                 a qualidade do vínculo observado entre chuva
                 nas cabeceiras e resposta posterior do rio;
