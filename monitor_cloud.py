@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import csv
 import json
@@ -18,6 +18,9 @@ import requests
 
 
 from barragens import coletar_barragens
+from barragens_historico_web import (
+    atualizar_historico_barragens,
+)
 
 
 # ============================================================
@@ -3098,6 +3101,62 @@ def ciclo():
 
         barragens = []
 
+    # ========================================================
+    # HISTORICO DAS BARRAGENS
+    #
+    # O proprio modulo limita a atualizacao para 30 minutos.
+    # Falha aqui nao interrompe o monitor principal.
+    # ========================================================
+
+    try:
+
+        resultado_hist_barragens = (
+            atualizar_historico_barragens()
+        )
+
+        if (
+            resultado_hist_barragens.get(
+                "executou"
+            )
+        ):
+
+            if resultado_hist_barragens.get(
+                "ok"
+            ):
+
+                log(
+                    (
+                        "Historico barragens atualizado: "
+                        f'{resultado_hist_barragens.get("horario_total", 0)} '
+                        "horarios / "
+                        f'{resultado_hist_barragens.get("diario_total", 0)} '
+                        "diarios"
+                    )
+                )
+
+            else:
+
+                log(
+                    (
+                        "ERRO HISTORICO BARRAGENS: "
+                        + str(
+                            resultado_hist_barragens.get(
+                                "erro",
+                                "-"
+                            )
+                        )
+                    )
+                )
+
+    except Exception as e:
+
+        log(
+            (
+                "ERRO HISTORICO BARRAGENS: "
+                + str(e)
+            )
+        )
+
     meteo = coletar_meteorologia()
 
     gerar_dashboard(
@@ -3253,8 +3312,3 @@ def main():
         time.sleep(
             espera
         )
-
-
-
-
-

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 from datetime import datetime
@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent
 ARQUIVOS_PERSISTENTES = [
     BASE_DIR / "historico" / "telemetria_historico.csv",
     BASE_DIR / "historico" / "barragens_historico.csv",
+    BASE_DIR / "historico" / "barragens_diario.csv",
     BASE_DIR / "dados" / "status.json",
 ]
 
