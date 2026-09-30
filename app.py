@@ -1,4 +1,4 @@
-﻿import os
+import os
 import threading
 import time
 import traceback
@@ -66,6 +66,7 @@ _coletor_iniciado = False
 INICIO_PROCESSO = datetime.now()
 
 PREVISAO_SEMANA = None
+PREVISAO_CABECEIRAS = None
 
 ESTADO_RUNTIME = {
     "ciclo_em_execucao": False,
@@ -661,6 +662,52 @@ def dashboard():
         )
     )
 
+    # ========================================================
+    # CABECEIRAS / VACARIA
+    # ========================================================
+
+    previsao_cabeceiras_exibir = (
+        PREVISAO_CABECEIRAS
+    )
+
+    if previsao_cabeceiras_exibir is None:
+
+        try:
+
+            previsao_cabeceiras_exibir = (
+                obter_previsao_segura(
+                    "cabeceiras"
+                )
+            )
+
+            print(
+                "[METEO] Cabeceiras/Vacaria "
+                "carregada sob demanda.",
+                flush=True,
+            )
+
+        except Exception as e:
+
+            previsao_cabeceiras_exibir = {
+                "ok": False,
+                "titulo": (
+                    "PREVISÃO METEOROLÓGICA "
+                    "— CABECEIRAS / VACARIA — 7 DIAS"
+                ),
+                "subtitulo": (
+                    "Cabeceiras do sistema "
+                    "Taquari-Antas"
+                ),
+                "erro": str(e),
+                "dias": [],
+            }
+
+    html_previsao_cabeceiras = (
+        gerar_html_previsao_semana(
+            previsao_cabeceiras_exibir
+        )
+    )
+
     # Coloca a previsao antes do aviso final do dashboard.
     marcador_previsao = (
         '<div class="aviso">'
@@ -674,7 +721,9 @@ def dashboard():
 
         html = html.replace(
             marcador_previsao,
-            html_previsao
+            html_previsao_cabeceiras
+            + "\n"
+            + html_previsao
             + "\n"
             + marcador_previsao,
             1,
@@ -685,7 +734,11 @@ def dashboard():
         not in html
     ):
 
-        html += html_previsao
+        html += (
+            html_previsao_cabeceiras
+            + "\n"
+            + html_previsao
+        )
 
     if "</body>" in html:
 
@@ -922,7 +975,3 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
     )
-
-
-
-
