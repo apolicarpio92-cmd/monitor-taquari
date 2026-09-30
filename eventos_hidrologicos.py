@@ -941,6 +941,256 @@ def validar_evento(
 
 
 # ============================================================
+# CONFIANCA DO VINCULO CHUVA -> RESPOSTA
+# ============================================================
+
+def avaliar_confianca_evento(
+    evento,
+):
+
+    valido, motivo_validacao = (
+        validar_evento(
+            evento
+        )
+    )
+
+    if not valido:
+
+        return {
+            "nivel":
+                "INFORMATIVO",
+
+            "pontuacao":
+                0,
+
+            "motivos":
+                [
+                    motivo_validacao
+                ],
+        }
+
+    pontos = 100
+    motivos = []
+
+    rs = evento[
+        "_resposta_santa"
+    ]
+
+    inicio = evento[
+        "inicio"
+    ]
+
+    resposta = rs.get(
+        "resposta"
+    )
+
+    tempo_resposta = None
+
+    if resposta:
+
+        tempo_resposta = (
+            resposta[
+                "data_hora"
+            ]
+            - inicio
+        ).total_seconds() / 60
+
+    tendencia_previa = abs(
+        float(
+            rs.get(
+                "tendencia_previa_m"
+            )
+            or 0
+        )
+    )
+
+    agrupados = int(
+        evento.get(
+            "chuvas_agrupadas",
+            1,
+        )
+        or 1
+    )
+
+    elevacao = float(
+        rs.get(
+            "elevacao_pico_m"
+        )
+        or 0
+    )
+
+    # --------------------------------------------------------
+    # 1. RESPOSTA MUITO PROXIMA DO INICIO DA CHUVA
+    #
+    # Nao significa que o evento esteja errado.
+    # Apenas reduz a seguranca de atribuir a subida
+    # exclusivamente a esse inicio de chuva.
+    # --------------------------------------------------------
+
+    if (
+        tempo_resposta is not None
+        and tempo_resposta < 60
+    ):
+
+        pontos -= 30
+
+        motivos.append(
+            (
+                "A resposta em Santa Tereza ocorreu "
+                "menos de 1 hora após o início da chuva "
+                "de referência; pode existir influência "
+                "de precipitação antecedente ou de outras "
+                "partes da bacia."
+            )
+        )
+
+    elif (
+        tempo_resposta is not None
+        and tempo_resposta < 120
+    ):
+
+        pontos -= 15
+
+        motivos.append(
+            (
+                "A resposta ocorreu relativamente próxima "
+                "ao início da chuva de referência."
+            )
+        )
+
+    else:
+
+        motivos.append(
+            (
+                "Existe separação temporal clara entre "
+                "o início da chuva e a resposta do rio."
+            )
+        )
+
+    # --------------------------------------------------------
+    # 2. TENDENCIA ANTES DO EVENTO
+    # --------------------------------------------------------
+
+    if tendencia_previa >= 0.06:
+
+        pontos -= 20
+
+        motivos.append(
+            (
+                "Havia movimentação perceptível do nível "
+                "nas horas anteriores ao evento."
+            )
+        )
+
+    elif tendencia_previa >= 0.03:
+
+        pontos -= 8
+
+        motivos.append(
+            (
+                "O nível apresentava pequena variação "
+                "antes do início da chuva."
+            )
+        )
+
+    else:
+
+        motivos.append(
+            (
+                "O nível estava praticamente estável "
+                "antes do evento."
+            )
+        )
+
+    # --------------------------------------------------------
+    # 3. MULTIPLOS BLOCOS DE CHUVA
+    # --------------------------------------------------------
+
+    if agrupados >= 3:
+
+        pontos -= 18
+
+        motivos.append(
+            (
+                f"O episódio reúne {agrupados} blocos "
+                "de chuva, aumentando a incerteza sobre "
+                "qual pulso teve maior influência."
+            )
+        )
+
+    elif agrupados == 2:
+
+        pontos -= 10
+
+        motivos.append(
+            (
+                "O episódio reúne 2 blocos de chuva; "
+                "a associação continua válida, mas com "
+                "maior incerteza temporal."
+            )
+        )
+
+    # --------------------------------------------------------
+    # 4. MAGNITUDE DA RESPOSTA
+    # --------------------------------------------------------
+
+    if elevacao < 0.35:
+
+        pontos -= 12
+
+        motivos.append(
+            (
+                "A elevação do nível foi relativamente "
+                "pequena, reduzindo a clareza do evento."
+            )
+        )
+
+    else:
+
+        motivos.append(
+            (
+                "A subida do rio foi suficientemente "
+                "clara para identificar a resposta."
+            )
+        )
+
+    pontos = max(
+        0,
+        min(
+            100,
+            int(
+                round(
+                    pontos
+                )
+            ),
+        ),
+    )
+
+    if pontos >= 80:
+
+        nivel = "ALTA"
+
+    elif pontos >= 55:
+
+        nivel = "MÉDIA"
+
+    else:
+
+        nivel = "BAIXA"
+
+    return {
+        "nivel":
+            nivel,
+
+        "pontuacao":
+            pontos,
+
+        "motivos":
+            motivos,
+    }
+
+
+# ============================================================
 # CONVERTE EVENTO PARA JSON
 # ============================================================
 
@@ -986,6 +1236,12 @@ def serializar_evento(
 
     valido, motivo = validar_evento(
         evento
+    )
+
+    confianca = (
+        avaliar_confianca_evento(
+            evento
+        )
     )
 
     tempo_resposta_santa = (
@@ -1064,6 +1320,9 @@ def serializar_evento(
 
         "motivo_validacao":
             motivo,
+
+        "confianca":
+            confianca,
 
         "linha": {
             "baseline":
@@ -1326,6 +1585,37 @@ def analisar_eventos_hidrologicos(
         for e in validos
     ]
 
+    confianca_contagem = {
+        "ALTA": 0,
+        "MÉDIA": 0,
+        "BAIXA": 0,
+        "INFORMATIVO": 0,
+    }
+
+    for evento in eventos:
+
+        nivel = (
+            evento
+            .get(
+                "confianca",
+                {},
+            )
+            .get(
+                "nivel",
+                "INFORMATIVO",
+            )
+        )
+
+        if nivel not in confianca_contagem:
+
+            confianca_contagem[
+                nivel
+            ] = 0
+
+        confianca_contagem[
+            nivel
+        ] += 1
+
     resultado = {
         "ok": True,
 
@@ -1361,6 +1651,9 @@ def analisar_eventos_hidrologicos(
                 len(eventos)
                 - len(validos)
             ),
+
+        "confianca_contagem":
+            confianca_contagem,
 
         "resumo": {
             "chuva_resposta_santa":
@@ -1538,6 +1831,58 @@ def gerar_html_eventos_hidrologicos():
     background:#182126;
     border:1px solid #39484f;
 }
+
+
+.evento-confianca {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:4px 7px;
+    border-radius:6px;
+    font-size:9px;
+    font-weight:800;
+}
+
+.evento-confianca-alta {
+    color:#a9dfc3;
+    background:#10231b;
+    border:1px solid #315943;
+}
+
+.evento-confianca-media {
+    color:#edd18c;
+    background:#251f12;
+    border:1px solid #6d592d;
+}
+
+.evento-confianca-baixa {
+    color:#e6aa9e;
+    background:#281815;
+    border:1px solid #71443a;
+}
+
+.evento-confianca-info {
+    color:#b9c6cc;
+    background:#182126;
+    border:1px solid #39484f;
+}
+
+.evento-confianca-detalhes {
+    margin-top:7px;
+    color:#718d9a;
+    font-size:9px;
+    line-height:1.5;
+}
+
+.evento-confianca-detalhes ul {
+    margin:5px 0 0 16px;
+    padding:0;
+}
+
+.evento-confianca-detalhes li {
+    margin-top:2px;
+}
+
 
 .evento-motivo {
     color:#718d9a;
@@ -1896,6 +2241,55 @@ async function carregarEventos() {
                         ? "✓ VÁLIDO PARA APRENDIZADO"
                         : "○ INFORMATIVO";
 
+                    const confianca =
+                        evento.confianca
+                        || {};
+
+                    const nivelConfianca =
+                        confianca.nivel
+                        || (
+                            valido
+                            ? "MÉDIA"
+                            : "INFORMATIVO"
+                        );
+
+                    let classeConfianca =
+                        "evento-confianca-info";
+
+                    if (
+                        nivelConfianca
+                        === "ALTA"
+                    ) {
+
+                        classeConfianca =
+                            "evento-confianca-alta";
+                    }
+
+                    else if (
+                        nivelConfianca
+                        === "MÉDIA"
+                    ) {
+
+                        classeConfianca =
+                            "evento-confianca-media";
+                    }
+
+                    else if (
+                        nivelConfianca
+                        === "BAIXA"
+                    ) {
+
+                        classeConfianca =
+                            "evento-confianca-baixa";
+                    }
+
+                    const motivosConfianca =
+                        Array.isArray(
+                            confianca.motivos
+                        )
+                        ? confianca.motivos
+                        : [];
+
                     let agrupamento = "";
 
                     if (
@@ -1962,7 +2356,51 @@ async function carregarEventos() {
                                     ${evento.motivo_validacao || ""}
                                 </span>
 
+                                <span
+                                    class="
+                                        evento-confianca
+                                        ${classeConfianca}
+                                    "
+                                >
+                                    CONFIANÇA:
+                                    ${nivelConfianca}
+
+                                    ${
+                                        valido
+                                        && confianca.pontuacao !== undefined
+                                        ? " · "
+                                          + confianca.pontuacao
+                                          + "/100"
+                                        : ""
+                                    }
+                                </span>
+
                             </div>
+
+                            ${
+                                motivosConfianca.length
+                                ? `
+                                <div
+                                    class="
+                                        evento-confianca-detalhes
+                                    "
+                                >
+                                    Por que esta classificação:
+
+                                    <ul>
+                                        ${
+                                            motivosConfianca
+                                            .map(
+                                                motivo =>
+                                                    `<li>${motivo}</li>`
+                                            )
+                                            .join("")
+                                        }
+                                    </ul>
+                                </div>
+                                `
+                                : ""
+                            }
 
                             <div class="evento-grid">
 
@@ -2046,6 +2484,10 @@ async function carregarEventos() {
                 informação e não alteram a mediana.
                 Chuva das cabeceiras:
                 ${dados.fonte_chuva}.
+                A classificação de confiança indica apenas
+                a qualidade do vínculo observado entre chuva
+                nas cabeceiras e resposta posterior do rio;
+                não é probabilidade de cheia nem previsão oficial.
                 Análise experimental — não representa previsão
                 ou alerta oficial.
             </div>
