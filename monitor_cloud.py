@@ -40,6 +40,11 @@ ARQ_DASH = BASE_DIR / "dashboard_v3.html"
 INTERVALO = 300
 TIMEOUT = 40
 
+# Timeout exclusivo para ANA:
+# 5 s para conexao e 12 s para leitura.
+# Evita uma requisicao ANA prender o ciclo inteiro.
+TIMEOUT_ANA = (5, 12)
+
 ETAPA_CICLO = "aguardando"
 ETAPA_CICLO_EM = None
 
@@ -243,10 +248,19 @@ def buscar_ana(
 
         try:
 
+            marcar_etapa(
+                "ana_http_"
+                + str(nome)
+                + "_"
+                + str(tipo_ana)
+            )
+
+            inicio_http = time.monotonic()
+
             resposta_teste = requests.get(
                 url_ana,
                 params=params,
-                timeout=TIMEOUT,
+                timeout=TIMEOUT_ANA,
                 headers={
                     "User-Agent":
                         "Monitor-Taquari-V3/1.0"
@@ -254,6 +268,27 @@ def buscar_ana(
             )
 
             resposta_teste.raise_for_status()
+
+            duracao_http = (
+                time.monotonic()
+                - inicio_http
+            )
+
+            log(
+                (
+                    f"ANA {nome} endpoint {tipo_ana}: "
+                    f"HTTP {resposta_teste.status_code} "
+                    f"em {duracao_http:.2f}s "
+                    f"({len(resposta_teste.content)} bytes)"
+                )
+            )
+
+            marcar_etapa(
+                "ana_parse_"
+                + str(nome)
+                + "_"
+                + str(tipo_ana)
+            )
 
             if not resposta_teste.text.strip():
 
@@ -276,9 +311,16 @@ def buscar_ana(
 
             ultimo_erro = e
 
+            marcar_etapa(
+                "ana_falha_"
+                + str(nome)
+                + "_"
+                + str(tipo_ana)
+            )
+
             log(
                 f"ANA {nome}: falha endpoint "
-                f"{tipo_ana}: {e}"
+                f"{tipo_ana}: {type(e).__name__}: {e}"
             )
 
     if resposta is None:
@@ -3023,9 +3065,19 @@ def ciclo():
 
         try:
 
+            marcar_etapa(
+                "ana_estacao_"
+                + str(nome)
+            )
+
             dados = buscar_ana(
                 nome,
                 cfg["codigo"]
+            )
+
+            marcar_etapa(
+                "ana_estacao_ok_"
+                + str(nome)
             )
 
             por_estacao[
