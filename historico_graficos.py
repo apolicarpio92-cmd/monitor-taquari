@@ -471,6 +471,68 @@ def gerar_html_graficos_historicos():
     font-size:13px;
 }
 
+.hist-leitura {
+    margin-top:10px;
+    margin-bottom:13px;
+    padding:12px 13px;
+    border-radius:10px;
+    background:#0b1317;
+    border:1px solid #263740;
+}
+
+.hist-situacao {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:7px;
+}
+
+.hist-situacao-badge {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    border-radius:7px;
+    padding:5px 9px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.03em;
+}
+
+.hist-descendo {
+    color:#99d3ef;
+    background:#10232c;
+    border:1px solid #31596d;
+}
+
+.hist-subindo {
+    color:#f0c977;
+    background:#251f12;
+    border:1px solid #6f5828;
+}
+
+.hist-estavel {
+    color:#bdc9ce;
+    background:#182126;
+    border:1px solid #39484f;
+}
+
+.hist-explicacao {
+    color:#c3d1d7;
+    font-size:12px;
+    line-height:1.5;
+}
+
+.hist-explicacao strong {
+    color:#ffffff;
+}
+
+.hist-detalhe {
+    margin-top:6px;
+    color:#7f9aa7;
+    font-size:10px;
+    line-height:1.45;
+}
+
 .hist-svg-wrap {
     width:100%;
     overflow:hidden;
@@ -639,6 +701,11 @@ def gerar_html_graficos_historicos():
             ></div>
 
             <div
+                class="hist-leitura"
+                id="hist-leitura-santa"
+            ></div>
+
+            <div
                 class="hist-svg-wrap"
                 id="grafico-santa"
             ></div>
@@ -658,6 +725,11 @@ def gerar_html_graficos_historicos():
             <div
                 class="hist-metricas"
                 id="hist-metricas-linha"
+            ></div>
+
+            <div
+                class="hist-leitura"
+                id="hist-leitura-linha"
             ></div>
 
             <div
@@ -683,6 +755,11 @@ def gerar_html_graficos_historicos():
             ></div>
 
             <div
+                class="hist-leitura"
+                id="hist-leitura-vazao"
+            ></div>
+
+            <div
                 class="hist-svg-wrap"
                 id="grafico-vazao"
             ></div>
@@ -693,7 +770,8 @@ def gerar_html_graficos_historicos():
 
     <div class="hist-rodape">
         Fonte: histórico coletado pelo Monitor Taquari.
-        Os gráficos representam dados observados disponíveis.
+        A interpretação automática descreve apenas a tendência
+        dos dados observados e não representa alerta oficial.
     </div>
 
 </section>
@@ -775,27 +853,56 @@ function filtrar(
 }
 
 
-function metricas(
-    serie,
-    unidade,
-    casas
+function periodoTexto() {
+
+    if (HORAS === 24) {
+        return "24 horas";
+    }
+
+    if (HORAS === 48) {
+        return "48 horas";
+    }
+
+    return "7 dias";
+}
+
+
+function horaBR(
+    valor
 ) {
 
-    if (!serie.length) {
+    const dt =
+        new Date(
+            valor
+        );
 
-        return {
-            html:
-                '<div class="hist-sem-dados">'
-                + 'Sem dados neste período.'
-                + '</div>'
-        };
+    return dt.toLocaleString(
+        "pt-BR",
+        {
+            day:"2-digit",
+            month:"2-digit",
+            hour:"2-digit",
+            minute:"2-digit"
+        }
+    );
+}
+
+
+function analisarSerie(
+    serie,
+    tipo
+) {
+
+    if (
+        !serie
+        || serie.length < 2
+    ) {
+        return null;
     }
 
     const valores =
         serie.map(
-            p => Number(
-                p.v
-            )
+            p => Number(p.v)
         );
 
     const atual =
@@ -806,69 +913,502 @@ function metricas(
     const inicial =
         valores[0];
 
+    let indiceMax = 0;
+    let indiceMin = 0;
+
+    valores.forEach(
+        (valor, indice) => {
+
+            if (
+                valor
+                > valores[indiceMax]
+            ) {
+                indiceMax = indice;
+            }
+
+            if (
+                valor
+                < valores[indiceMin]
+            ) {
+                indiceMin = indice;
+            }
+        }
+    );
+
     const maximo =
-        Math.max(
-            ...valores
-        );
+        valores[indiceMax];
 
     const minimo =
-        Math.min(
-            ...valores
-        );
+        valores[indiceMin];
 
-    const variacao =
+    const variacaoPeriodo =
         atual - inicial;
 
-    const sinal =
-        variacao > 0
+    // ========================================================
+    // TENDENCIA RECENTE:
+    // compara valor atual com aproximadamente 3h antes.
+    // ========================================================
+
+    const agora =
+        new Date(
+            serie[
+                serie.length - 1
+            ].t
+        );
+
+    const limite =
+        new Date(
+            agora.getTime()
+            - 3
+            * 60
+            * 60
+            * 1000
+        );
+
+    let indiceReferencia = 0;
+
+    for (
+        let i = serie.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const dt =
+            new Date(
+                serie[i].t
+            );
+
+        if (dt <= limite) {
+
+            indiceReferencia = i;
+            break;
+        }
+    }
+
+    const referencia =
+        Number(
+            serie[
+                indiceReferencia
+            ].v
+        );
+
+    const mudancaRecente =
+        atual - referencia;
+
+    let estado = "estavel";
+
+    if (tipo === "nivel") {
+
+        if (mudancaRecente >= 0.05) {
+            estado = "subindo";
+        }
+        else if (
+            mudancaRecente <= -0.05
+        ) {
+            estado = "descendo";
+        }
+
+    }
+    else {
+
+        const base =
+            Math.abs(
+                referencia
+            );
+
+        const percentual =
+            base > 0
+            ? (
+                mudancaRecente
+                / base
+            ) * 100
+            : 0;
+
+        if (percentual >= 1) {
+            estado = "subindo";
+        }
+        else if (
+            percentual <= -1
+        ) {
+            estado = "descendo";
+        }
+    }
+
+    return {
+        atual,
+        inicial,
+        maximo,
+        minimo,
+        variacaoPeriodo,
+        mudancaRecente,
+        estado,
+        pico:serie[indiceMax],
+        minimoRegistro:
+            serie[indiceMin]
+    };
+}
+
+
+function metricas(
+    serie,
+    unidade,
+    casas,
+    tipo
+) {
+
+    if (!serie.length) {
+
+        return {
+            html:
+                '<div class="hist-sem-dados">'
+                + 'Sem dados neste período.'
+                + '</div>',
+
+            leitura:
+                '<div class="hist-explicacao">'
+                + 'Ainda não há dados suficientes '
+                + 'para interpretar este período.'
+                + '</div>'
+        };
+    }
+
+    const a =
+        analisarSerie(
+            serie,
+            tipo
+        );
+
+    if (!a) {
+
+        return {
+            html:"",
+            leitura:
+                '<div class="hist-explicacao">'
+                + 'Histórico insuficiente.'
+                + '</div>'
+        };
+    }
+
+    const sinalPeriodo =
+        a.variacaoPeriodo > 0
         ? "+"
         : "";
 
+    let icone = "→";
+    let textoEstado = "ESTÁVEL";
+    let classe =
+        "hist-estavel";
+
+    if (a.estado === "subindo") {
+
+        icone = "↑";
+
+        textoEstado =
+            tipo === "vazao"
+            ? "VAZÃO AUMENTANDO"
+            : "SUBINDO";
+
+        classe =
+            "hist-subindo";
+    }
+
+    if (
+        a.estado === "descendo"
+    ) {
+
+        icone = "↓";
+
+        textoEstado =
+            tipo === "vazao"
+            ? "VAZÃO EM QUEDA"
+            : "DESCENDO";
+
+        classe =
+            "hist-descendo";
+    }
+
+    let interpretacao = "";
+    let detalhe = "";
+
+    if (tipo === "nivel") {
+
+        const quedaDesdePico =
+            a.maximo - a.atual;
+
+        const altaDesdeMinimo =
+            a.atual - a.minimo;
+
+        if (
+            a.estado === "descendo"
+        ) {
+
+            interpretacao =
+                "Nas últimas horas, "
+                + "o nível do rio está "
+                + "<strong>descendo</strong>.";
+
+            detalhe =
+                "O maior nível de "
+                + periodoTexto()
+                + " foi "
+                + numeroBR(
+                    a.maximo,
+                    2
+                )
+                + " m em "
+                + horaBR(
+                    a.pico.t
+                )
+                + ". Desde esse pico, "
+                + "o rio baixou "
+                + numeroBR(
+                    quedaDesdePico,
+                    2
+                )
+                + " m.";
+        }
+
+        else if (
+            a.estado === "subindo"
+        ) {
+
+            interpretacao =
+                "Nas últimas horas, "
+                + "o nível do rio está "
+                + "<strong>subindo</strong>.";
+
+            detalhe =
+                "O menor nível de "
+                + periodoTexto()
+                + " foi "
+                + numeroBR(
+                    a.minimo,
+                    2
+                )
+                + " m em "
+                + horaBR(
+                    a.minimoRegistro.t
+                )
+                + ". Desde esse ponto, "
+                + "o rio subiu "
+                + numeroBR(
+                    altaDesdeMinimo,
+                    2
+                )
+                + " m.";
+        }
+
+        else {
+
+            interpretacao =
+                "Nas últimas horas, "
+                + "o nível está "
+                + "<strong>praticamente estável</strong>.";
+
+            detalhe =
+                "Em "
+                + periodoTexto()
+                + ", o nível ficou entre "
+                + numeroBR(
+                    a.minimo,
+                    2
+                )
+                + " m e "
+                + numeroBR(
+                    a.maximo,
+                    2
+                )
+                + " m.";
+        }
+    }
+
+    else {
+
+        const reducaoPico =
+            a.maximo - a.atual;
+
+        const aumentoMinimo =
+            a.atual - a.minimo;
+
+        if (
+            a.estado === "descendo"
+        ) {
+
+            interpretacao =
+                "Está passando "
+                + "<strong>menos água</strong> "
+                + "pela estação do que "
+                + "há algumas horas.";
+
+            detalhe =
+                "A maior vazão de "
+                + periodoTexto()
+                + " foi "
+                + numeroBR(
+                    a.maximo,
+                    0
+                )
+                + " m³/s em "
+                + horaBR(
+                    a.pico.t
+                )
+                + ". A vazão atual está "
+                + numeroBR(
+                    reducaoPico,
+                    0
+                )
+                + " m³/s abaixo desse pico.";
+        }
+
+        else if (
+            a.estado === "subindo"
+        ) {
+
+            interpretacao =
+                "Está passando "
+                + "<strong>mais água</strong> "
+                + "pela estação nas últimas horas.";
+
+            detalhe =
+                "Desde o menor valor de "
+                + periodoTexto()
+                + ", a vazão aumentou "
+                + numeroBR(
+                    aumentoMinimo,
+                    0
+                )
+                + " m³/s.";
+        }
+
+        else {
+
+            interpretacao =
+                "A quantidade de água "
+                + "passando pela estação está "
+                + "<strong>relativamente estável</strong>.";
+
+            detalhe =
+                "Em "
+                + periodoTexto()
+                + ", a vazão variou entre "
+                + numeroBR(
+                    a.minimo,
+                    0
+                )
+                + " e "
+                + numeroBR(
+                    a.maximo,
+                    0
+                )
+                + " m³/s.";
+        }
+    }
+
+    const nomeAtual =
+        tipo === "nivel"
+        ? "Nível agora"
+        : "Vazão agora";
+
+    const nomeMax =
+        tipo === "nivel"
+        ? "Maior nível"
+        : "Maior vazão";
+
+    const nomeMin =
+        tipo === "nivel"
+        ? "Menor nível"
+        : "Menor vazão";
+
     return {
+
         html:
             `
             <div class="hist-metrica">
-                <span>Atual</span>
+                <span>${nomeAtual}</span>
                 <strong>
-                    ${numeroBR(atual, casas)}
+                    ${numeroBR(
+                        a.atual,
+                        casas
+                    )}
                     ${unidade}
                 </strong>
             </div>
 
             <div class="hist-metrica">
-                <span>Máximo</span>
+                <span>${nomeMax}</span>
                 <strong>
-                    ${numeroBR(maximo, casas)}
+                    ${numeroBR(
+                        a.maximo,
+                        casas
+                    )}
                     ${unidade}
                 </strong>
             </div>
 
             <div class="hist-metrica">
-                <span>Mínimo</span>
+                <span>${nomeMin}</span>
                 <strong>
-                    ${numeroBR(minimo, casas)}
+                    ${numeroBR(
+                        a.minimo,
+                        casas
+                    )}
                     ${unidade}
                 </strong>
             </div>
 
             <div class="hist-metrica">
-                <span>Variação</span>
+                <span>
+                    Mudança no período
+                </span>
+
                 <strong>
-                    ${sinal}${numeroBR(variacao, casas)}
+                    ${sinalPeriodo}
+                    ${numeroBR(
+                        a.variacaoPeriodo,
+                        casas
+                    )}
                     ${unidade}
                 </strong>
+            </div>
+            `,
+
+        leitura:
+            `
+            <div class="hist-situacao">
+
+                <span
+                    class="
+                        hist-situacao-badge
+                        ${classe}
+                    "
+                >
+                    ${icone}
+                    ${textoEstado}
+                </span>
+
+            </div>
+
+            <div class="hist-explicacao">
+                ${interpretacao}
+            </div>
+
+            <div class="hist-detalhe">
+                ${detalhe}
             </div>
             `
     };
 }
 
 
+
 function desenhar(
     destinoId,
     metricasId,
+    leituraId,
     serieOriginal,
     unidade,
-    casas
+    casas,
+    tipo
 ) {
 
     const destino =
@@ -881,9 +1421,15 @@ function desenhar(
             metricasId
         );
 
+    const boxLeitura =
+        document.getElementById(
+            leituraId
+        );
+
     if (
         !destino
         || !boxMetricas
+        || !boxLeitura
     ) {
         return;
     }
@@ -897,11 +1443,15 @@ function desenhar(
         metricas(
             serie,
             unidade,
-            casas
+            casas,
+            tipo
         );
 
     boxMetricas.innerHTML =
         resumo.html;
+
+    boxLeitura.innerHTML =
+        resumo.leitura;
 
     if (
         serie.length < 2
@@ -1251,25 +1801,31 @@ function renderizar() {
     desenhar(
         "grafico-santa",
         "hist-metricas-santa",
+        "hist-leitura-santa",
         DADOS.series.santa_nivel,
         "m",
-        2
+        2,
+        "nivel"
     );
 
     desenhar(
         "grafico-linha",
         "hist-metricas-linha",
+        "hist-leitura-linha",
         DADOS.series.linha_nivel,
         "m",
-        2
+        2,
+        "nivel"
     );
 
     desenhar(
         "grafico-vazao",
         "hist-metricas-vazao",
+        "hist-leitura-vazao",
         DADOS.series.linha_vazao,
         "m³/s",
-        0
+        0,
+        "vazao"
     );
 }
 
