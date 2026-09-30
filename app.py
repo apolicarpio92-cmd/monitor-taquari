@@ -39,6 +39,12 @@ from previsao_semana import (
 )
 
 
+from runtime_persist import (
+    salvar_status_runtime,
+    carregar_status_runtime,
+)
+
+
 BASE_DIR = Path(__file__).resolve().parent
 
 # ============================================================
@@ -114,10 +120,16 @@ def coletor():
 
             monitor_cloud.ciclo()
 
+            momento_coleta_ok = agora_iso()
+
             ESTADO_RUNTIME[
                 "ultima_coleta_ok"
-            ] = agora_iso()
+            ] = momento_coleta_ok
 
+            salvar_status_runtime(
+                "ultima_coleta_ok",
+                momento_coleta_ok,
+            )
             ESTADO_RUNTIME[
                 "ultimo_erro"
             ] = None
@@ -785,6 +797,10 @@ def ping():
         "ultimo_ping_externo"
     ] = momento
 
+    salvar_status_runtime(
+        "ultimo_ping_externo",
+        momento,
+    )
     return jsonify(
         {
             "status": "ok",
@@ -796,6 +812,45 @@ def ping():
 
 @app.get("/runtime-status")
 def runtime_status():
+
+    # ========================================================
+    # RECUPERA STATUS PERSISTENTE DO TURSO
+    # ========================================================
+
+    if (
+        ESTADO_RUNTIME.get(
+            "ultima_coleta_ok"
+        )
+        is None
+    ):
+
+        valor = carregar_status_runtime(
+            "ultima_coleta_ok"
+        )
+
+        if valor:
+
+            ESTADO_RUNTIME[
+                "ultima_coleta_ok"
+            ] = valor
+
+    if (
+        ESTADO_RUNTIME.get(
+            "ultimo_ping_externo"
+        )
+        is None
+    ):
+
+        valor = carregar_status_runtime(
+            "ultimo_ping_externo"
+        )
+
+        if valor:
+
+            ESTADO_RUNTIME[
+                "ultimo_ping_externo"
+            ] = valor
+
 
     agora = datetime.now()
 
