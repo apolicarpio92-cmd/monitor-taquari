@@ -44,6 +44,12 @@ from historico_graficos import (
 )
 
 
+from eventos_hidrologicos import (
+    analisar_eventos_hidrologicos,
+    gerar_html_eventos_hidrologicos,
+)
+
+
 BASE_DIR = Path(__file__).resolve().parent
 
 # ============================================================
@@ -667,6 +673,10 @@ def dashboard():
         gerar_html_graficos_historicos()
     )
 
+    html_eventos = (
+        gerar_html_eventos_hidrologicos()
+    )
+
     html_previsao = (
         gerar_html_previsao_semana(
             previsao_exibir
@@ -732,7 +742,9 @@ def dashboard():
 
         html = html.replace(
             marcador_previsao,
-            html_graficos
+            html_eventos
+            + "\n"
+            + html_graficos
             + "\n"
             + html_previsao_cabeceiras
             + "\n"
@@ -748,7 +760,9 @@ def dashboard():
     ):
 
         html += (
-            html_graficos
+            html_eventos
+            + "\n"
+            + html_graficos
             + "\n"
             + html_previsao_cabeceiras
             + "\n"
@@ -808,6 +822,18 @@ def ping():
             "ping_registrado": True,
         }
     )
+
+@app.get("/api/eventos-hidrologicos")
+def api_eventos_hidrologicos():
+
+    dados = (
+        analisar_eventos_hidrologicos()
+    )
+
+    return jsonify(
+        dados
+    )
+
 
 @app.get("/runtime-status")
 def runtime_status():
