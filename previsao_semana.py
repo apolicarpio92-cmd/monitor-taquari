@@ -14,7 +14,7 @@ URL = "https://api.open-meteo.com/v1/forecast"
 
 TIMEZONE = "America/Sao_Paulo"
 
-CACHE_SEGUNDOS = 1800
+CACHE_SEGUNDOS = 3600
 
 
 LOCAIS = {
@@ -131,63 +131,34 @@ def numero(valor, casas=1):
 # COLETA
 # ============================================================
 
-def obter_previsao_semana(
-    local="santa_tereza",
-    forcar=False,
+# Cache compartilhado.
+#
+# Uma unica consulta ao Open-Meteo carrega:
+# - Santa Tereza
+# - Cabeceiras / Vacaria
+#
+# Isso reduz significativamente o numero de requisicoes
+# externas realizadas pelo dashboard.
+
+_CACHE = {}
+
+_CACHE_GERAL = {
+    "em": None,
+    "dados": {},
+    "ultimo_erro": None,
+    "ultimo_erro_em": None,
+}
+
+
+def _montar_previsao_local(
+    local,
+    dados,
+    agora,
 ):
 
-    if local not in LOCAIS:
-        raise ValueError(
-            f"Local meteorologico desconhecido: {local}"
-        )
-
-    cfg = LOCAIS[local]
-
-    agora = datetime.now()
-
-    cache_local = _CACHE.get(local)
-
-    if (
-        not forcar
-        and cache_local
-        and cache_local.get("dados") is not None
-        and cache_local.get("em") is not None
-        and (
-            agora - cache_local["em"]
-        ).total_seconds() < CACHE_SEGUNDOS
-    ):
-        return cache_local["dados"]
-
-    params = {
-        "latitude": cfg["latitude"],
-        "longitude": cfg["longitude"],
-        "timezone": TIMEZONE,
-        "forecast_days": 7,
-
-        "hourly": ",".join([
-            "precipitation",
-            "precipitation_probability",
-        ]),
-
-        "daily": ",".join([
-            "weather_code",
-            "temperature_2m_max",
-            "temperature_2m_min",
-            "precipitation_sum",
-            "precipitation_probability_max",
-            "wind_gusts_10m_max",
-        ]),
-    }
-
-    resposta = requests.get(
-        URL,
-        params=params,
-        timeout=20,
-    )
-
-    resposta.raise_for_status()
-
-    dados = resposta.json()
+    cfg = LOCAIS[
+        local
+    ]
 
     hourly = dados.get(
         "hourly",
@@ -221,12 +192,16 @@ def obter_previsao_semana(
         microsecond=0,
     )
 
-    for indice, texto_data in enumerate(horas):
+    for indice, texto_data in enumerate(
+        horas
+    ):
 
         try:
+
             dt = datetime.fromisoformat(
                 texto_data
             )
+
         except Exception:
             continue
 
@@ -234,10 +209,14 @@ def obter_previsao_semana(
             continue
 
         try:
+
             chuva = float(
-                precipitacao_hora[indice]
+                precipitacao_hora[
+                    indice
+                ]
                 or 0
             )
+
         except Exception:
             chuva = 0.0
 
@@ -248,12 +227,18 @@ def obter_previsao_semana(
             )
         )
 
-    limite_24 = agora + timedelta(
-        hours=24
+    limite_24 = (
+        agora
+        + timedelta(
+            hours=24
+        )
     )
 
-    limite_72 = agora + timedelta(
-        hours=72
+    limite_72 = (
+        agora
+        + timedelta(
+            hours=72
+        )
     )
 
     chuva_24h = sum(
@@ -271,7 +256,7 @@ def obter_previsao_semana(
     )
 
     # ========================================================
-    # DIARIO
+    # DADOS DIARIOS
     # ========================================================
 
     datas = daily.get(
@@ -311,77 +296,111 @@ def obter_previsao_semana(
 
     dias = []
 
-    for i, data_texto in enumerate(datas):
+    for i, data_texto in enumerate(
+        datas
+    ):
 
         try:
+
             dt = datetime.fromisoformat(
                 data_texto
             )
+
         except Exception:
             continue
 
         codigo = (
             codigos[i]
-            if i < len(codigos)
+            if i < len(
+                codigos
+            )
             else None
         )
 
-        descricao, icone = descricao_tempo(
-            codigo
+        descricao, icone = (
+            descricao_tempo(
+                codigo
+            )
         )
 
         dias.append(
             {
-                "data": data_texto,
+                "data":
+                    data_texto,
 
-                "dia_semana": (
-                    "HOJE"
-                    if dt.date() == agora.date()
-                    else nome_dia(dt)
-                ),
+                "dia_semana":
+                    (
+                        "HOJE"
+                        if (
+                            dt.date()
+                            == agora.date()
+                        )
+                        else nome_dia(
+                            dt
+                        )
+                    ),
 
-                "data_curta": dt.strftime(
-                    "%d/%m"
-                ),
+                "data_curta":
+                    dt.strftime(
+                        "%d/%m"
+                    ),
 
-                "codigo": codigo,
+                "codigo":
+                    codigo,
 
-                "descricao": descricao,
+                "descricao":
+                    descricao,
 
-                "icone": icone,
+                "icone":
+                    icone,
 
-                "maxima": numero(
-                    maximas[i]
-                    if i < len(maximas)
-                    else 0
-                ),
-
-                "minima": numero(
-                    minimas[i]
-                    if i < len(minimas)
-                    else 0
-                ),
-
-                "chuva": numero(
-                    chuvas[i]
-                    if i < len(chuvas)
-                    else 0
-                ),
-
-                "probabilidade": int(
+                "maxima":
                     numero(
-                        probabilidades[i]
-                        if i < len(probabilidades)
-                        else 0,
-                        0,
-                    )
-                ),
+                        maximas[i]
+                        if i < len(
+                            maximas
+                        )
+                        else 0
+                    ),
 
-                "rajada": numero(
-                    rajadas[i]
-                    if i < len(rajadas)
-                    else 0
-                ),
+                "minima":
+                    numero(
+                        minimas[i]
+                        if i < len(
+                            minimas
+                        )
+                        else 0
+                    ),
+
+                "chuva":
+                    numero(
+                        chuvas[i]
+                        if i < len(
+                            chuvas
+                        )
+                        else 0
+                    ),
+
+                "probabilidade":
+                    int(
+                        numero(
+                            probabilidades[i]
+                            if i < len(
+                                probabilidades
+                            )
+                            else 0,
+                            0,
+                        )
+                    ),
+
+                "rajada":
+                    numero(
+                        rajadas[i]
+                        if i < len(
+                            rajadas
+                        )
+                        else 0
+                    ),
             }
         )
 
@@ -396,54 +415,427 @@ def obter_previsao_semana(
 
         mais_chuvoso = max(
             dias,
-            key=lambda d: d["chuva"],
+            key=lambda d:
+                d["chuva"],
         )
 
-    resultado = {
+    return {
         "ok": True,
 
-        "chave_local": local,
+        "chave_local":
+            local,
 
-        "local": cfg["nome"],
+        "local":
+            cfg["nome"],
 
-        "titulo": cfg["titulo"],
+        "titulo":
+            cfg["titulo"],
 
-        "subtitulo": cfg["subtitulo"],
+        "subtitulo":
+            cfg["subtitulo"],
 
-        "latitude": cfg["latitude"],
+        "latitude":
+            cfg["latitude"],
 
-        "longitude": cfg["longitude"],
+        "longitude":
+            cfg["longitude"],
 
-        "atualizado_em": agora.isoformat(
-            timespec="minutes"
-        ),
+        "atualizado_em":
+            agora.isoformat(
+                timespec="minutes"
+            ),
 
-        "chuva_24h": round(
-            chuva_24h,
-            1,
-        ),
+        "chuva_24h":
+            round(
+                chuva_24h,
+                1,
+            ),
 
-        "chuva_72h": round(
-            chuva_72h,
-            1,
-        ),
+        "chuva_72h":
+            round(
+                chuva_72h,
+                1,
+            ),
 
-        "chuva_7d": round(
-            chuva_7d,
-            1,
-        ),
+        "chuva_7d":
+            round(
+                chuva_7d,
+                1,
+            ),
 
-        "mais_chuvoso": mais_chuvoso,
+        "mais_chuvoso":
+            mais_chuvoso,
 
-        "dias": dias,
+        "dias":
+            dias,
+
+        "cache":
+            False,
+
+        "dados_desatualizados":
+            False,
     }
 
-    _CACHE[local] = {
-        "em": agora,
-        "dados": resultado,
+
+def _buscar_previsoes_conjuntas():
+
+    agora = datetime.now()
+
+    chaves = list(
+        LOCAIS.keys()
+    )
+
+    latitudes = ",".join(
+        str(
+            LOCAIS[chave][
+                "latitude"
+            ]
+        )
+        for chave in chaves
+    )
+
+    longitudes = ",".join(
+        str(
+            LOCAIS[chave][
+                "longitude"
+            ]
+        )
+        for chave in chaves
+    )
+
+    params = {
+        "latitude":
+            latitudes,
+
+        "longitude":
+            longitudes,
+
+        "timezone":
+            TIMEZONE,
+
+        "forecast_days":
+            7,
+
+        "hourly":
+            ",".join(
+                [
+                    "precipitation",
+                    "precipitation_probability",
+                ]
+            ),
+
+        "daily":
+            ",".join(
+                [
+                    "weather_code",
+                    "temperature_2m_max",
+                    "temperature_2m_min",
+                    "precipitation_sum",
+                    "precipitation_probability_max",
+                    "wind_gusts_10m_max",
+                ]
+            ),
     }
 
-    return resultado
+    resposta = requests.get(
+        URL,
+        params=params,
+        timeout=20,
+        headers={
+            "User-Agent":
+                (
+                    "MonitorTaquari/1.0 "
+                    "(monitor hidrologico)"
+                )
+        },
+    )
+
+    resposta.raise_for_status()
+
+    bruto = resposta.json()
+
+    # Para varias coordenadas, o Open-Meteo
+    # normalmente devolve uma lista.
+    #
+    # Mantemos suporte defensivo caso venha
+    # um unico objeto.
+
+    if isinstance(
+        bruto,
+        dict,
+    ):
+
+        resultados_brutos = [
+            bruto
+        ]
+
+    elif isinstance(
+        bruto,
+        list,
+    ):
+
+        resultados_brutos = bruto
+
+    else:
+
+        raise RuntimeError(
+            "Resposta meteorologica "
+            "em formato inesperado."
+        )
+
+    if len(
+        resultados_brutos
+    ) != len(
+        chaves
+    ):
+
+        raise RuntimeError(
+            "Quantidade de localidades "
+            "retornada pelo Open-Meteo "
+            "diferente da solicitada."
+        )
+
+    resultados = {}
+
+    for chave, dados_local in zip(
+        chaves,
+        resultados_brutos,
+    ):
+
+        resultados[
+            chave
+        ] = (
+            _montar_previsao_local(
+                chave,
+                dados_local,
+                agora,
+            )
+        )
+
+    return resultados
+
+
+def _cache_valido():
+
+    momento = (
+        _CACHE_GERAL.get(
+            "em"
+        )
+    )
+
+    dados = (
+        _CACHE_GERAL.get(
+            "dados"
+        )
+    )
+
+    if (
+        momento is None
+        or not dados
+    ):
+        return False
+
+    idade = (
+        datetime.now()
+        - momento
+    ).total_seconds()
+
+    return (
+        idade
+        < CACHE_SEGUNDOS
+    )
+
+
+def _marcar_cache(
+    resultado,
+    desatualizado=False,
+):
+
+    copia = dict(
+        resultado
+    )
+
+    copia[
+        "cache"
+    ] = True
+
+    copia[
+        "dados_desatualizados"
+    ] = bool(
+        desatualizado
+    )
+
+    erro = (
+        _CACHE_GERAL.get(
+            "ultimo_erro"
+        )
+    )
+
+    erro_em = (
+        _CACHE_GERAL.get(
+            "ultimo_erro_em"
+        )
+    )
+
+    if desatualizado and erro:
+
+        copia[
+            "aviso"
+        ] = (
+            "Open-Meteo temporariamente "
+            "indisponivel. Exibindo a "
+            "ultima previsao valida."
+        )
+
+        copia[
+            "ultimo_erro"
+        ] = erro
+
+        copia[
+            "ultimo_erro_em"
+        ] = (
+            erro_em.isoformat(
+                timespec="minutes"
+            )
+            if erro_em
+            else None
+        )
+
+    return copia
+
+
+def obter_previsao_semana(
+    local="santa_tereza",
+    forcar=False,
+):
+
+    if local not in LOCAIS:
+
+        raise ValueError(
+            (
+                "Local meteorologico "
+                "desconhecido: "
+                f"{local}"
+            )
+        )
+
+    # --------------------------------------------------------
+    # CACHE VALIDO
+    # --------------------------------------------------------
+
+    if (
+        not forcar
+        and _cache_valido()
+    ):
+
+        resultado = (
+            _CACHE_GERAL[
+                "dados"
+            ].get(
+                local
+            )
+        )
+
+        if resultado:
+
+            return _marcar_cache(
+                resultado,
+                desatualizado=False,
+            )
+
+    # --------------------------------------------------------
+    # UMA UNICA CHAMADA PARA AS DUAS LOCALIDADES
+    # --------------------------------------------------------
+
+    try:
+
+        resultados = (
+            _buscar_previsoes_conjuntas()
+        )
+
+        agora = datetime.now()
+
+        _CACHE_GERAL[
+            "em"
+        ] = agora
+
+        _CACHE_GERAL[
+            "dados"
+        ] = resultados
+
+        _CACHE_GERAL[
+            "ultimo_erro"
+        ] = None
+
+        _CACHE_GERAL[
+            "ultimo_erro_em"
+        ] = None
+
+        # Compatibilidade com codigo antigo
+        # que eventualmente consulte _CACHE.
+
+        for chave, resultado in (
+            resultados.items()
+        ):
+
+            _CACHE[
+                chave
+            ] = {
+                "em":
+                    agora,
+
+                "dados":
+                    resultado,
+            }
+
+        return resultados[
+            local
+        ]
+
+    except Exception as e:
+
+        _CACHE_GERAL[
+            "ultimo_erro"
+        ] = str(
+            e
+        )
+
+        _CACHE_GERAL[
+            "ultimo_erro_em"
+        ] = datetime.now()
+
+        # ----------------------------------------------------
+        # FALLBACK:
+        # se temos uma previsao boa anterior,
+        # nao derrubamos o painel por causa de um 429.
+        # ----------------------------------------------------
+
+        anterior = (
+            _CACHE_GERAL.get(
+                "dados",
+                {},
+            ).get(
+                local
+            )
+        )
+
+        if anterior:
+
+            print(
+                (
+                    "[METEO] Falha na atualizacao. "
+                    "Usando ultima previsao valida: "
+                    f"{e}"
+                ),
+                flush=True,
+            )
+
+            return _marcar_cache(
+                anterior,
+                desatualizado=True,
+            )
+
+        raise
 
 
 # ============================================================
@@ -468,22 +860,41 @@ def obter_previsao_segura(
         )
 
         return {
-            "ok": False,
-            "chave_local": local,
-            "local": cfg.get(
-                "nome",
+            "ok":
+                False,
+
+            "chave_local":
                 local,
-            ),
-            "titulo": cfg.get(
-                "titulo",
-                "PREVISÃO METEOROLÓGICA — 7 DIAS",
-            ),
-            "subtitulo": cfg.get(
-                "subtitulo",
-                "",
-            ),
-            "erro": str(e),
-            "dias": [],
+
+            "local":
+                cfg.get(
+                    "nome",
+                    local,
+                ),
+
+            "titulo":
+                cfg.get(
+                    "titulo",
+                    (
+                        "PREVISAO "
+                        "METEOROLOGICA "
+                        "— 7 DIAS"
+                    ),
+                ),
+
+            "subtitulo":
+                cfg.get(
+                    "subtitulo",
+                    "",
+                ),
+
+            "erro":
+                str(
+                    e
+                ),
+
+            "dias":
+                [],
         }
 
 
