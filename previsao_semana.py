@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from html import escape
 
 import requests
@@ -131,26 +132,215 @@ def numero(valor, casas=1):
 # COLETA
 # ============================================================
 
-# Cache compartilhado.
-#
-# Uma unica consulta ao Open-Meteo carrega:
-# - Santa Tereza
-# - Cabeceiras / Vacaria
-#
-# Isso reduz significativamente o numero de requisicoes
-# externas realizadas pelo dashboard.
+URL_MET_NORWAY = (
+    "https://api.met.no/weatherapi/"
+    "locationforecast/2.0/compact"
+)
+
+FUSO_BRASIL = ZoneInfo(
+    "America/Sao_Paulo"
+)
 
 _CACHE = {}
 
 _CACHE_GERAL = {
     "em": None,
     "dados": {},
+    "fonte": None,
     "ultimo_erro": None,
     "ultimo_erro_em": None,
 }
 
 
-def _montar_previsao_local(
+# ============================================================
+# HELPERS
+# ============================================================
+
+def _numero_seguro(
+    valor,
+    padrao=0.0,
+):
+
+    try:
+        return float(
+            valor
+        )
+
+    except Exception:
+        return float(
+            padrao
+        )
+
+
+def _cache_valido():
+
+    momento = _CACHE_GERAL.get(
+        "em"
+    )
+
+    dados = _CACHE_GERAL.get(
+        "dados"
+    )
+
+    if (
+        momento is None
+        or not dados
+    ):
+        return False
+
+    idade = (
+        datetime.now()
+        - momento
+    ).total_seconds()
+
+    return (
+        idade
+        < CACHE_SEGUNDOS
+    )
+
+
+def _resultado_cache(
+    local,
+):
+
+    resultado = (
+        _CACHE_GERAL
+        .get(
+            "dados",
+            {},
+        )
+        .get(
+            local
+        )
+    )
+
+    if not resultado:
+        return None
+
+    copia = dict(
+        resultado
+    )
+
+    copia["cache"] = True
+
+    return copia
+
+
+# ============================================================
+# DESCRICAO MET NORWAY
+# ============================================================
+
+def _descricao_met(
+    codigo,
+):
+
+    codigo = (
+        str(
+            codigo
+            or ""
+        )
+        .lower()
+        .strip()
+    )
+
+    mapa_exato = {
+        "clearsky_day":
+            ("Céu limpo", "☀️"),
+
+        "clearsky_night":
+            ("Céu limpo", "🌙"),
+
+        "fair_day":
+            ("Predomínio de sol", "🌤️"),
+
+        "fair_night":
+            ("Poucas nuvens", "🌙"),
+
+        "partlycloudy_day":
+            ("Parcialmente nublado", "⛅"),
+
+        "partlycloudy_night":
+            ("Parcialmente nublado", "☁️"),
+
+        "cloudy":
+            ("Nublado", "☁️"),
+
+        "fog":
+            ("Nevoeiro", "🌫️"),
+    }
+
+    if codigo in mapa_exato:
+
+        return mapa_exato[
+            codigo
+        ]
+
+    if "thunder" in codigo:
+
+        if "rain" in codigo:
+            return (
+                "Trovoadas com chuva",
+                "⛈️",
+            )
+
+        return (
+            "Trovoadas",
+            "⛈️",
+        )
+
+    if "heavyrain" in codigo:
+
+        return (
+            "Chuva forte",
+            "🌧️",
+        )
+
+    if "rain" in codigo:
+
+        return (
+            "Chuva",
+            "🌧️",
+        )
+
+    if "heavysleet" in codigo:
+
+        return (
+            "Precipitação intensa",
+            "🌧️",
+        )
+
+    if "sleet" in codigo:
+
+        return (
+            "Chuva e gelo",
+            "🌧️",
+        )
+
+    if "heavysnow" in codigo:
+
+        return (
+            "Neve forte",
+            "❄️",
+        )
+
+    if "snow" in codigo:
+
+        return (
+            "Neve",
+            "❄️",
+        )
+
+    return (
+        "Condição variável",
+        "🌤️",
+    )
+
+
+# ============================================================
+# OPEN-METEO
+# ============================================================
+
+def _montar_openmeteo_local(
     local,
     dados,
     agora,
@@ -169,10 +359,6 @@ def _montar_previsao_local(
         "daily",
         {},
     )
-
-    # ========================================================
-    # PRECIPITACAO HORARIA
-    # ========================================================
 
     horas = hourly.get(
         "time",
@@ -208,17 +394,17 @@ def _montar_previsao_local(
         if dt < inicio_hora:
             continue
 
-        try:
+        chuva = 0.0
 
-            chuva = float(
+        if indice < len(
+            precipitacao_hora
+        ):
+
+            chuva = _numero_seguro(
                 precipitacao_hora[
                     indice
                 ]
-                or 0
             )
-
-        except Exception:
-            chuva = 0.0
 
         registros_horarios.append(
             (
@@ -254,10 +440,6 @@ def _montar_previsao_local(
         in registros_horarios
         if dt <= limite_72
     )
-
-    # ========================================================
-    # DADOS DIARIOS
-    # ========================================================
 
     datas = daily.get(
         "time",
@@ -469,15 +651,18 @@ def _montar_previsao_local(
         "dias":
             dias,
 
+        "fonte":
+            "Open-Meteo",
+
         "cache":
             False,
 
-        "dados_desatualizados":
+        "fallback":
             False,
     }
 
 
-def _buscar_previsoes_conjuntas():
+def _buscar_openmeteo():
 
     agora = datetime.now()
 
@@ -543,10 +728,7 @@ def _buscar_previsoes_conjuntas():
         timeout=20,
         headers={
             "User-Agent":
-                (
-                    "MonitorTaquari/1.0 "
-                    "(monitor hidrologico)"
-                )
+                "MonitorTaquari/1.0"
         },
     )
 
@@ -554,18 +736,12 @@ def _buscar_previsoes_conjuntas():
 
     bruto = resposta.json()
 
-    # Para varias coordenadas, o Open-Meteo
-    # normalmente devolve uma lista.
-    #
-    # Mantemos suporte defensivo caso venha
-    # um unico objeto.
-
     if isinstance(
         bruto,
         dict,
     ):
 
-        resultados_brutos = [
+        lista = [
             bruto
         ]
 
@@ -574,40 +750,38 @@ def _buscar_previsoes_conjuntas():
         list,
     ):
 
-        resultados_brutos = bruto
+        lista = bruto
 
     else:
 
         raise RuntimeError(
-            "Resposta meteorologica "
-            "em formato inesperado."
+            "Formato inesperado "
+            "do Open-Meteo."
         )
 
-    if len(
-        resultados_brutos
-    ) != len(
+    if len(lista) != len(
         chaves
     ):
 
         raise RuntimeError(
-            "Quantidade de localidades "
-            "retornada pelo Open-Meteo "
-            "diferente da solicitada."
+            "Open-Meteo retornou "
+            "quantidade inesperada "
+            "de localidades."
         )
 
     resultados = {}
 
-    for chave, dados_local in zip(
+    for chave, dados in zip(
         chaves,
-        resultados_brutos,
+        lista,
     ):
 
         resultados[
             chave
         ] = (
-            _montar_previsao_local(
+            _montar_openmeteo_local(
                 chave,
-                dados_local,
+                dados,
                 agora,
             )
         )
@@ -615,93 +789,759 @@ def _buscar_previsoes_conjuntas():
     return resultados
 
 
-def _cache_valido():
+# ============================================================
+# MET NORWAY
+# ============================================================
 
-    momento = (
-        _CACHE_GERAL.get(
-            "em"
-        )
-    )
-
-    dados = (
-        _CACHE_GERAL.get(
-            "dados"
-        )
-    )
-
-    if (
-        momento is None
-        or not dados
-    ):
-        return False
-
-    idade = (
-        datetime.now()
-        - momento
-    ).total_seconds()
-
-    return (
-        idade
-        < CACHE_SEGUNDOS
-    )
-
-
-def _marcar_cache(
-    resultado,
-    desatualizado=False,
+def _buscar_met_local(
+    local,
 ):
 
-    copia = dict(
-        resultado
+    cfg = LOCAIS[
+        local
+    ]
+
+    params = {
+        "lat":
+            round(
+                float(
+                    cfg[
+                        "latitude"
+                    ]
+                ),
+                4,
+            ),
+
+        "lon":
+            round(
+                float(
+                    cfg[
+                        "longitude"
+                    ]
+                ),
+                4,
+            ),
+    }
+
+    headers = {
+        "User-Agent":
+            (
+                "MonitorTaquari/1.0 "
+                "https://monitor-taquari.onrender.com"
+            ),
+    }
+
+    resposta = requests.get(
+        URL_MET_NORWAY,
+        params=params,
+        headers=headers,
+        timeout=20,
     )
 
-    copia[
-        "cache"
-    ] = True
+    resposta.raise_for_status()
 
-    copia[
-        "dados_desatualizados"
-    ] = bool(
-        desatualizado
-    )
+    return resposta.json()
 
-    erro = (
-        _CACHE_GERAL.get(
-            "ultimo_erro"
+
+def _converter_data_met(
+    texto,
+):
+
+    dt = datetime.fromisoformat(
+        texto.replace(
+            "Z",
+            "+00:00",
         )
     )
 
-    erro_em = (
-        _CACHE_GERAL.get(
-            "ultimo_erro_em"
+    return dt.astimezone(
+        FUSO_BRASIL
+    )
+
+
+def _precipitacao_periodo_met(
+    dados_periodo,
+):
+
+    if not isinstance(
+        dados_periodo,
+        dict,
+    ):
+        return 0.0
+
+    detalhes = dados_periodo.get(
+        "details",
+        {},
+    )
+
+    return _numero_seguro(
+        detalhes.get(
+            "precipitation_amount",
+            0,
         )
     )
 
-    if desatualizado and erro:
 
-        copia[
-            "aviso"
-        ] = (
-            "Open-Meteo temporariamente "
-            "indisponivel. Exibindo a "
-            "ultima previsao valida."
+def _probabilidade_periodo_met(
+    dados_periodo,
+):
+
+    if not isinstance(
+        dados_periodo,
+        dict,
+    ):
+        return 0.0
+
+    detalhes = dados_periodo.get(
+        "details",
+        {},
+    )
+
+    return _numero_seguro(
+        detalhes.get(
+            "probability_of_precipitation",
+            0,
+        )
+    )
+
+
+def _montar_met_local(
+    local,
+    bruto,
+):
+
+    cfg = LOCAIS[
+        local
+    ]
+
+    agora = datetime.now()
+
+    serie = (
+        bruto.get(
+            "properties",
+            {},
+        )
+        .get(
+            "timeseries",
+            []
+        )
+    )
+
+    if not serie:
+
+        raise RuntimeError(
+            "MET Norway retornou "
+            "serie meteorologica vazia."
         )
 
-        copia[
-            "ultimo_erro"
-        ] = erro
+    pontos = []
 
-        copia[
-            "ultimo_erro_em"
-        ] = (
-            erro_em.isoformat(
-                timespec="minutes"
+    # --------------------------------------------------------
+    # Converte a serie para horario local.
+    #
+    # A API pode passar de resolucao horaria
+    # para intervalos maiores ao longo da previsao.
+    # --------------------------------------------------------
+
+    for indice, item in enumerate(
+        serie
+    ):
+
+        try:
+
+            dt = _converter_data_met(
+                item[
+                    "time"
+                ]
             )
-            if erro_em
-            else None
+
+        except Exception:
+            continue
+
+        dados = item.get(
+            "data",
+            {},
         )
 
-    return copia
+        instant = (
+            dados.get(
+                "instant",
+                {},
+            )
+            .get(
+                "details",
+                {},
+            )
+        )
+
+        temperatura = _numero_seguro(
+            instant.get(
+                "air_temperature"
+            )
+        )
+
+        rajada = _numero_seguro(
+            instant.get(
+                "wind_speed_of_gust",
+                instant.get(
+                    "wind_speed",
+                    0,
+                ),
+            )
+        )
+
+        simbolo = None
+        chuva = 0.0
+        probabilidade = 0.0
+        horas_intervalo = 0
+
+        # ----------------------------------------------------
+        # Descobre o espacamento real ate o proximo ponto.
+        # Isso evita somar janelas de 6h sobrepostas.
+        # ----------------------------------------------------
+
+        proximo_dt = None
+
+        if indice + 1 < len(
+            serie
+        ):
+
+            try:
+
+                proximo_dt = (
+                    _converter_data_met(
+                        serie[
+                            indice + 1
+                        ][
+                            "time"
+                        ]
+                    )
+                )
+
+            except Exception:
+                proximo_dt = None
+
+        if proximo_dt:
+
+            horas_intervalo = (
+                proximo_dt - dt
+            ).total_seconds() / 3600
+
+        # ----------------------------------------------------
+        # SERIE HORARIA
+        # ----------------------------------------------------
+
+        if (
+            horas_intervalo <= 1.5
+            or horas_intervalo == 0
+        ):
+
+            periodo = dados.get(
+                "next_1_hours"
+            )
+
+            if periodo:
+
+                chuva = (
+                    _precipitacao_periodo_met(
+                        periodo
+                    )
+                )
+
+                probabilidade = (
+                    _probabilidade_periodo_met(
+                        periodo
+                    )
+                )
+
+                simbolo = (
+                    periodo
+                    .get(
+                        "summary",
+                        {},
+                    )
+                    .get(
+                        "symbol_code"
+                    )
+                )
+
+                horas_intervalo = 1
+
+        # ----------------------------------------------------
+        # SERIE EM INTERVALOS MAIORES
+        # ----------------------------------------------------
+
+        if (
+            simbolo is None
+            and horas_intervalo <= 6.5
+        ):
+
+            periodo = dados.get(
+                "next_6_hours"
+            )
+
+            if periodo:
+
+                chuva = (
+                    _precipitacao_periodo_met(
+                        periodo
+                    )
+                )
+
+                probabilidade = (
+                    _probabilidade_periodo_met(
+                        periodo
+                    )
+                )
+
+                simbolo = (
+                    periodo
+                    .get(
+                        "summary",
+                        {},
+                    )
+                    .get(
+                        "symbol_code"
+                    )
+                )
+
+                horas_intervalo = 6
+
+        if simbolo is None:
+
+            for chave_periodo in (
+                "next_1_hours",
+                "next_6_hours",
+                "next_12_hours",
+            ):
+
+                periodo = dados.get(
+                    chave_periodo
+                )
+
+                if not periodo:
+                    continue
+
+                simbolo = (
+                    periodo
+                    .get(
+                        "summary",
+                        {},
+                    )
+                    .get(
+                        "symbol_code"
+                    )
+                )
+
+                if simbolo:
+                    break
+
+        pontos.append(
+            {
+                "dt":
+                    dt.replace(
+                        tzinfo=None
+                    ),
+
+                "temperatura":
+                    temperatura,
+
+                "rajada":
+                    rajada,
+
+                "chuva":
+                    chuva,
+
+                "probabilidade":
+                    probabilidade,
+
+                "simbolo":
+                    simbolo,
+
+                "horas_intervalo":
+                    horas_intervalo,
+            }
+        )
+
+    if not pontos:
+
+        raise RuntimeError(
+            "Nao foi possivel interpretar "
+            "a previsao do MET Norway."
+        )
+
+    # --------------------------------------------------------
+    # CHUVA 24H / 72H
+    # --------------------------------------------------------
+
+    agora_local = datetime.now()
+
+    limite_24 = (
+        agora_local
+        + timedelta(
+            hours=24
+        )
+    )
+
+    limite_72 = (
+        agora_local
+        + timedelta(
+            hours=72
+        )
+    )
+
+    chuva_24h = sum(
+        p["chuva"]
+        for p in pontos
+        if (
+            p["dt"] >= agora_local
+            and p["dt"] < limite_24
+        )
+    )
+
+    chuva_72h = sum(
+        p["chuva"]
+        for p in pontos
+        if (
+            p["dt"] >= agora_local
+            and p["dt"] < limite_72
+        )
+    )
+
+    # --------------------------------------------------------
+    # AGRUPAMENTO DIARIO
+    # --------------------------------------------------------
+
+    grupos = {}
+
+    for ponto in pontos:
+
+        data = ponto[
+            "dt"
+        ].date()
+
+        grupos.setdefault(
+            data,
+            [],
+        ).append(
+            ponto
+        )
+
+    dias = []
+
+    datas_ordenadas = sorted(
+        grupos.keys()
+    )[:7]
+
+    for data in datas_ordenadas:
+
+        registros = grupos[
+            data
+        ]
+
+        temperaturas = [
+            r["temperatura"]
+            for r in registros
+        ]
+
+        rajadas = [
+            r["rajada"]
+            for r in registros
+        ]
+
+        chuva_dia = sum(
+            r["chuva"]
+            for r in registros
+        )
+
+        probabilidade = max(
+            (
+                r["probabilidade"]
+                for r in registros
+            ),
+            default=0,
+        )
+
+        # Escolhe simbolo proximo do meio-dia.
+        simbolo_registro = min(
+            registros,
+            key=lambda r:
+                abs(
+                    r["dt"].hour
+                    - 12
+                ),
+        )
+
+        descricao, icone = (
+            _descricao_met(
+                simbolo_registro[
+                    "simbolo"
+                ]
+            )
+        )
+
+        dt_data = datetime.combine(
+            data,
+            datetime.min.time(),
+        )
+
+        dias.append(
+            {
+                "data":
+                    data.isoformat(),
+
+                "dia_semana":
+                    (
+                        "HOJE"
+                        if (
+                            data
+                            == agora_local.date()
+                        )
+                        else nome_dia(
+                            dt_data
+                        )
+                    ),
+
+                "data_curta":
+                    dt_data.strftime(
+                        "%d/%m"
+                    ),
+
+                "codigo":
+                    simbolo_registro[
+                        "simbolo"
+                    ],
+
+                "descricao":
+                    descricao,
+
+                "icone":
+                    icone,
+
+                "maxima":
+                    round(
+                        max(
+                            temperaturas
+                        ),
+                        1,
+                    ),
+
+                "minima":
+                    round(
+                        min(
+                            temperaturas
+                        ),
+                        1,
+                    ),
+
+                "chuva":
+                    round(
+                        chuva_dia,
+                        1,
+                    ),
+
+                "probabilidade":
+                    int(
+                        round(
+                            probabilidade
+                        )
+                    ),
+
+                "rajada":
+                    round(
+                        max(
+                            rajadas
+                        ),
+                        1,
+                    ),
+            }
+        )
+
+    chuva_7d = sum(
+        dia["chuva"]
+        for dia in dias
+    )
+
+    mais_chuvoso = None
+
+    if dias:
+
+        mais_chuvoso = max(
+            dias,
+            key=lambda d:
+                d["chuva"],
+        )
+
+    return {
+        "ok": True,
+
+        "chave_local":
+            local,
+
+        "local":
+            cfg["nome"],
+
+        "titulo":
+            cfg["titulo"],
+
+        "subtitulo":
+            cfg["subtitulo"],
+
+        "latitude":
+            cfg["latitude"],
+
+        "longitude":
+            cfg["longitude"],
+
+        "atualizado_em":
+            agora_local.isoformat(
+                timespec="minutes"
+            ),
+
+        "chuva_24h":
+            round(
+                chuva_24h,
+                1,
+            ),
+
+        "chuva_72h":
+            round(
+                chuva_72h,
+                1,
+            ),
+
+        "chuva_7d":
+            round(
+                chuva_7d,
+                1,
+            ),
+
+        "mais_chuvoso":
+            mais_chuvoso,
+
+        "dias":
+            dias,
+
+        "fonte":
+            "MET Norway",
+
+        "cache":
+            False,
+
+        "fallback":
+            True,
+    }
+
+
+def _buscar_met_norway():
+
+    resultados = {}
+
+    for local in LOCAIS:
+
+        bruto = _buscar_met_local(
+            local
+        )
+
+        resultados[
+            local
+        ] = _montar_met_local(
+            local,
+            bruto,
+        )
+
+    return resultados
+
+
+# ============================================================
+# MOTOR MULTIFONTE
+# ============================================================
+
+def _buscar_previsoes():
+
+    erro_openmeteo = None
+
+    # --------------------------------------------------------
+    # FONTE 1 — OPEN-METEO
+    # --------------------------------------------------------
+
+    try:
+
+        resultados = (
+            _buscar_openmeteo()
+        )
+
+        print(
+            "[METEO] Fonte: Open-Meteo.",
+            flush=True,
+        )
+
+        return (
+            resultados,
+            "Open-Meteo",
+            None,
+        )
+
+    except Exception as e:
+
+        erro_openmeteo = str(
+            e
+        )
+
+        print(
+            (
+                "[METEO] Open-Meteo falhou: "
+                + erro_openmeteo
+            ),
+            flush=True,
+        )
+
+    # --------------------------------------------------------
+    # FONTE 2 — MET NORWAY
+    # --------------------------------------------------------
+
+    try:
+
+        resultados = (
+            _buscar_met_norway()
+        )
+
+        print(
+            (
+                "[METEO] Fonte alternativa "
+                "ativada: MET Norway."
+            ),
+            flush=True,
+        )
+
+        return (
+            resultados,
+            "MET Norway",
+            erro_openmeteo,
+        )
+
+    except Exception as e:
+
+        erro_met = str(
+            e
+        )
+
+        print(
+            (
+                "[METEO] MET Norway falhou: "
+                + erro_met
+            ),
+            flush=True,
+        )
+
+        raise RuntimeError(
+            (
+                "Open-Meteo: "
+                + erro_openmeteo
+                + " | MET Norway: "
+                + erro_met
+            )
+        )
 
 
 def obter_previsao_semana(
@@ -720,7 +1560,7 @@ def obter_previsao_semana(
         )
 
     # --------------------------------------------------------
-    # CACHE VALIDO
+    # CACHE
     # --------------------------------------------------------
 
     if (
@@ -729,29 +1569,25 @@ def obter_previsao_semana(
     ):
 
         resultado = (
-            _CACHE_GERAL[
-                "dados"
-            ].get(
+            _resultado_cache(
                 local
             )
         )
 
         if resultado:
-
-            return _marcar_cache(
-                resultado,
-                desatualizado=False,
-            )
+            return resultado
 
     # --------------------------------------------------------
-    # UMA UNICA CHAMADA PARA AS DUAS LOCALIDADES
+    # ATUALIZACAO
     # --------------------------------------------------------
 
     try:
 
-        resultados = (
-            _buscar_previsoes_conjuntas()
-        )
+        (
+            resultados,
+            fonte,
+            erro_principal,
+        ) = _buscar_previsoes()
 
         agora = datetime.now()
 
@@ -764,15 +1600,20 @@ def obter_previsao_semana(
         ] = resultados
 
         _CACHE_GERAL[
+            "fonte"
+        ] = fonte
+
+        _CACHE_GERAL[
             "ultimo_erro"
-        ] = None
+        ] = erro_principal
 
         _CACHE_GERAL[
             "ultimo_erro_em"
-        ] = None
-
-        # Compatibilidade com codigo antigo
-        # que eventualmente consulte _CACHE.
+        ] = (
+            agora
+            if erro_principal
+            else None
+        )
 
         for chave, resultado in (
             resultados.items()
@@ -794,46 +1635,54 @@ def obter_previsao_semana(
 
     except Exception as e:
 
-        _CACHE_GERAL[
-            "ultimo_erro"
-        ] = str(
-            e
-        )
-
-        _CACHE_GERAL[
-            "ultimo_erro_em"
-        ] = datetime.now()
-
         # ----------------------------------------------------
-        # FALLBACK:
-        # se temos uma previsao boa anterior,
-        # nao derrubamos o painel por causa de um 429.
+        # ULTIMO DADO VALIDO
         # ----------------------------------------------------
 
         anterior = (
-            _CACHE_GERAL.get(
+            _CACHE_GERAL
+            .get(
                 "dados",
                 {},
-            ).get(
+            )
+            .get(
                 local
             )
         )
 
         if anterior:
 
+            copia = dict(
+                anterior
+            )
+
+            copia[
+                "cache"
+            ] = True
+
+            copia[
+                "dados_desatualizados"
+            ] = True
+
+            copia[
+                "aviso"
+            ] = (
+                "As fontes meteorologicas "
+                "estao temporariamente "
+                "indisponiveis. Exibindo "
+                "a ultima previsao valida."
+            )
+
             print(
                 (
-                    "[METEO] Falha na atualizacao. "
-                    "Usando ultima previsao valida: "
-                    f"{e}"
+                    "[METEO] Usando ultima "
+                    "previsao valida: "
+                    + str(e)
                 ),
                 flush=True,
             )
 
-            return _marcar_cache(
-                anterior,
-                desatualizado=True,
-            )
+            return copia
 
         raise
 
@@ -889,6 +1738,12 @@ def obter_previsao_segura(
                 ),
 
             "erro":
+                (
+                    "Previsao meteorologica "
+                    "temporariamente indisponivel."
+                ),
+
+            "erro_tecnico":
                 str(
                     e
                 ),
@@ -1302,6 +2157,24 @@ def gerar_html_previsao_semana(
         )
     )
 
+    fonte = escape(
+        previsao.get(
+            "fonte",
+            "Open-Meteo",
+        )
+    )
+
+    aviso_fonte = ""
+
+    if previsao.get(
+        "fallback"
+    ):
+
+        aviso_fonte = (
+            " Fonte alternativa ativada "
+            "automaticamente."
+        )
+
     corpo = f"""
 <section
     class="previsao-semanal"
@@ -1383,7 +2256,7 @@ def gerar_html_previsao_semana(
     <div class="prev-rodape">
         Local: {local}.
         Atualização meteorológica: {atualizado}.
-        Fonte: Open-Meteo.
+        Fonte: {fonte}.{aviso_fonte}
         Dados meteorológicos são previsão e
         não substituem alertas oficiais.
     </div>
