@@ -536,7 +536,7 @@ def gerar_html_previsao_semana(
     return f"""
     <style>
 
-    .previsao-semanal {
+    .previsao-semanal {{
         margin-top: 18px;
         margin-bottom: 18px;
         padding: 20px;
@@ -545,128 +545,128 @@ def gerar_html_previsao_semana(
         border: 1px solid #2b3941;
         box-shadow: none;
         color: #f4f7f8;
-    }
+    }}
 
-    .prev-cabecalho {
+    .prev-cabecalho {{
         display:flex;
         align-items:flex-start;
         justify-content:space-between;
         gap:16px;
         margin-bottom:16px;
-    }
+    }}
 
-    .prev-titulo {
+    .prev-titulo {{
         font-size:15px;
         font-weight:800;
         letter-spacing:.04em;
         color:#8fb8d0;
-    }
+    }}
 
-    .prev-subtitulo {
+    .prev-subtitulo {{
         margin-top:4px;
         color:#93a9b5;
         font-size:12px;
-    }
+    }}
 
-    .prev-resumo {
+    .prev-resumo {{
         display:grid;
         grid-template-columns:
             repeat(4, minmax(0, 1fr));
         gap:10px;
         margin-bottom:18px;
-    }
+    }}
 
-    .prev-resumo-card {
+    .prev-resumo-card {{
         border-radius:12px;
         background:#0c1418;
         padding:13px 14px;
         border:1px solid #26343b;
-    }
+    }}
 
-    .prev-resumo-card span {
+    .prev-resumo-card span {{
         display:block;
         color:#7ea0b3;
         font-size:11px;
         margin-bottom:5px;
-    }
+    }}
 
-    .prev-resumo-card strong {
+    .prev-resumo-card strong {{
         display:block;
         color:#ffffff;
         font-size:19px;
-    }
+    }}
 
-    .prev-dias {
+    .prev-dias {{
         display:grid;
         grid-template-columns:
             repeat(7, minmax(130px, 1fr));
         gap:10px;
         overflow-x:auto;
         padding-bottom:3px;
-    }
+    }}
 
-    .prev-dia {
+    .prev-dia {{
         min-width:130px;
         border:1px solid #2a3941;
         border-radius:13px;
         padding:12px;
         background:#10191e;
-    }
+    }}
 
-    .prev-dia:hover {
+    .prev-dia:hover {{
         border-color:#45606e;
-    }
+    }}
 
-    .prev-chuva-forte {
+    .prev-chuva-forte {{
         border-color:#926f2c;
         background:#1b1a13;
-    }
+    }}
 
-    .prev-dia-topo {
+    .prev-dia-topo {{
         display:flex;
         justify-content:space-between;
         align-items:center;
         gap:8px;
         font-size:12px;
         color:#819ba9;
-    }
+    }}
 
-    .prev-dia-topo strong {
+    .prev-dia-topo strong {{
         color:#dcebf2;
         font-size:13px;
-    }
+    }}
 
-    .prev-icone {
+    .prev-icone {{
         font-size:30px;
         margin-top:10px;
         margin-bottom:5px;
-    }
+    }}
 
-    .prev-condicao {
+    .prev-condicao {{
         min-height:34px;
         font-size:12px;
         color:#b1c2ca;
         margin-bottom:8px;
-    }
+    }}
 
-    .prev-temp {
+    .prev-temp {{
         display:flex;
         align-items:baseline;
         gap:7px;
         margin-bottom:10px;
-    }
+    }}
 
-    .prev-temp strong {
+    .prev-temp strong {{
         font-size:21px;
         color:#ffffff;
-    }
+    }}
 
-    .prev-temp span {
+    .prev-temp span {{
         font-size:14px;
         color:#8095a0;
-    }
+    }}
 
-    .prev-linha {
+    .prev-linha {{
         display:flex;
         align-items:center;
         justify-content:space-between;
@@ -675,60 +675,60 @@ def gerar_html_previsao_semana(
         margin-top:6px;
         border-top:1px solid #26343b;
         font-size:11px;
-    }
+    }}
 
-    .prev-linha span {
+    .prev-linha span {{
         color:#819aa7;
-    }
+    }}
 
-    .prev-linha strong {
+    .prev-linha strong {{
         color:#f4f7f8;
-    }
+    }}
 
-    .prev-rodape {
+    .prev-rodape {{
         margin-top:12px;
         color:#6f8793;
         font-size:10px;
-    }
+    }}
 
-    .prev-indisponivel {
+    .prev-indisponivel {{
         margin-top:10px;
         color:#b3c4cc;
         font-size:13px;
-    }
+    }}
 
-    @media (max-width: 900px) {
+    @media (max-width: 900px) {{
 
-        .prev-resumo {
+        .prev-resumo {{
             grid-template-columns:
                 repeat(2, minmax(0, 1fr));
-        }
+        }}
 
-        .prev-dias {
+        .prev-dias {{
             grid-template-columns:
                 repeat(7, 138px);
-        }
-    }
+        }}
+    }}
 
-    @media (max-width: 560px) {
+    @media (max-width: 560px) {{
 
-        .previsao-semanal {
+        .previsao-semanal {{
             padding:14px;
-        }
+        }}
 
-        .prev-cabecalho {
+        .prev-cabecalho {{
             display:block;
-        }
+        }}
 
-        .prev-resumo {
+        .prev-resumo {{
             grid-template-columns:
                 repeat(2, minmax(0, 1fr));
-        }
+        }}
 
-        .prev-dia {
+        .prev-dia {{
             min-width:132px;
-        }
-    }
+        }}
+    }}
 
     </style>
 
@@ -827,4 +827,5 @@ def obter_previsao_segura():
             "erro": str(e),
             "dias": [],
         }
+
 
