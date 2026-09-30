@@ -920,6 +920,20 @@ def runtime_status():
                     )
                 ),
 
+            "etapa_monitor":
+                getattr(
+                    monitor_cloud,
+                    "ETAPA_CICLO",
+                    None,
+                ),
+
+            "etapa_monitor_em":
+                getattr(
+                    monitor_cloud,
+                    "ETAPA_CICLO_EM",
+                    None,
+                ),
+
             "ultimo_ciclo_inicio":
                 ESTADO_RUNTIME.get(
                     "ultimo_ciclo_inicio"

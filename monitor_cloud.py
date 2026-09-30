@@ -40,6 +40,32 @@ ARQ_DASH = BASE_DIR / "dashboard_v3.html"
 INTERVALO = 300
 TIMEOUT = 40
 
+ETAPA_CICLO = "aguardando"
+ETAPA_CICLO_EM = None
+
+
+def marcar_etapa(nome):
+
+    global ETAPA_CICLO
+    global ETAPA_CICLO_EM
+
+    ETAPA_CICLO = str(nome)
+
+    ETAPA_CICLO_EM = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+    print(
+        (
+            "[CICLO-ETAPA] "
+            + ETAPA_CICLO
+            + " | "
+            + ETAPA_CICLO_EM
+        ),
+        flush=True,
+    )
+
+
 ANA_URL = (
     "https://telemetriaws1.ana.gov.br/"
     "ServiceANA.asmx/DadosHidrometeorologicos"
@@ -2971,12 +2997,20 @@ def ajustar_layout_status_servidor(html):
 
 def ciclo():
 
+    marcar_etapa(
+        "inicio"
+    )
+
     log(
         "=" * 55
     )
 
     log(
         "Nova coleta V3"
+    )
+
+    marcar_etapa(
+        "coleta_estacoes_ana"
     )
 
     recebidos = []
@@ -3081,6 +3115,10 @@ def ciclo():
                 f'{p["max"]:.2f})'
             )
 
+    marcar_etapa(
+        "barragens_atual"
+    )
+
     try:
 
         barragens = coletar_barragens()
@@ -3107,6 +3145,10 @@ def ciclo():
     # O proprio modulo limita a atualizacao para 30 minutos.
     # Falha aqui nao interrompe o monitor principal.
     # ========================================================
+
+    marcar_etapa(
+        "barragens_historico"
+    )
 
     try:
 
@@ -3157,7 +3199,15 @@ def ciclo():
             )
         )
 
+    marcar_etapa(
+        "meteorologia"
+    )
+
     meteo = coletar_meteorologia()
+
+    marcar_etapa(
+        "gerando_dashboard"
+    )
 
     gerar_dashboard(
         por_estacao,
@@ -3170,6 +3220,10 @@ def ciclo():
     # WHATSAPP AUTOMATICO
     # ========================================================
 
+    marcar_etapa(
+        "salvando_status"
+    )
+
     salvar_status(
         por_estacao,
         modelo
@@ -3177,6 +3231,10 @@ def ciclo():
 
     log(
         "Dashboard V3 atualizado."
+    )
+
+    marcar_etapa(
+        "ciclo_monitor_cloud_concluido"
     )
 
 
