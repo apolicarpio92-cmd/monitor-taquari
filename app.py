@@ -799,50 +799,42 @@ def ping():
 @app.get("/runtime-status")
 def runtime_status():
 
-        agora = datetime.now()
+    agora = datetime.now()
 
-    ultima = (
-        ESTADO_RUNTIME.get(
-            "ultima_coleta_ok"
-        )
-    )
-
-    minutos = None
-
-    if ultima:
-
-        try:
-
-            dt_ultima = (
-                datetime.fromisoformat(
-                    ultima
-                )
-            )
-
-            minutos = int(
-                (
-                    agora
-                    - dt_ultima
-                ).total_seconds()
-                / 60
-            )
-
-        except Exception:
-
-            minutos = None
-
-    uptime_segundos = int(
-        (
-            agora
-            - INICIO_PROCESSO
-        ).total_seconds()
+    ultima = ESTADO_RUNTIME.get(
+        "ultima_coleta_ok"
     )
 
     ultimo_ping = ESTADO_RUNTIME.get(
         "ultimo_ping_externo"
     )
 
-    minutos_ping = None
+    minutos_desde_coleta = None
+
+    if ultima:
+
+        try:
+
+            dt_ultima = datetime.fromisoformat(
+                ultima
+            )
+
+            minutos_desde_coleta = max(
+                0,
+                int(
+                    (
+                        agora
+                        - dt_ultima
+                    ).total_seconds()
+                    / 60
+                ),
+            )
+
+        except Exception:
+
+            minutos_desde_coleta = None
+
+    minutos_desde_ping = None
 
     if ultimo_ping:
 
@@ -852,49 +844,77 @@ def runtime_status():
                 ultimo_ping
             )
 
-            minutos_ping = int(
-                (
-                    agora
-                    - dt_ping
-                ).total_seconds()
-                / 60
+            minutos_desde_ping = max(
+                0,
+                int(
+                    (
+                        agora
+                        - dt_ping
+                    ).total_seconds()
+                    / 60
+                ),
             )
 
         except Exception:
 
-            minutos_ping = None
+            minutos_desde_ping = None
+
+    uptime_segundos = max(
+        0,
+        int(
+            (
+                agora
+                - INICIO_PROCESSO
+            ).total_seconds()
+        ),
+    )
 
     return jsonify(
         {
             "status": "ok",
+
             "ciclo_em_execucao":
-                ESTADO_RUNTIME[
-                    "ciclo_em_execucao"
-                ],
+                bool(
+                    ESTADO_RUNTIME.get(
+                        "ciclo_em_execucao",
+                        False,
+                    )
+                ),
+
             "ultimo_ciclo_inicio":
-                ESTADO_RUNTIME[
+                ESTADO_RUNTIME.get(
                     "ultimo_ciclo_inicio"
-                ],
+                ),
+
             "ultima_coleta_ok":
-                ESTADO_RUNTIME[
-                    "ultima_coleta_ok"
-                ],
+                ultima,
+
             "minutos_desde_coleta":
-                minutos,
-            "ultimo_erro":
-                ESTADO_RUNTIME[
-                    "ultimo_erro"
-                ],
-            "ultimo_erro_em":
-                ESTADO_RUNTIME[
-                    "ultimo_erro_em"
-                ],
-            "uptime_segundos":
-                uptime_segundos,
+                minutos_desde_coleta,
+
             "ultimo_ping_externo":
                 ultimo_ping,
+
             "minutos_desde_ping":
-                minutos_ping,
+                minutos_desde_ping,
+
+            "ultimo_erro":
+                ESTADO_RUNTIME.get(
+                    "ultimo_erro"
+                ),
+
+            "ultimo_erro_em":
+                ESTADO_RUNTIME.get(
+                    "ultimo_erro_em"
+                ),
+
+            "uptime_segundos":
+                uptime_segundos,
+
+            "hora_servidor":
+                agora.isoformat(
+                    timespec="seconds"
+                ),
         }
     )
 
