@@ -45,15 +45,28 @@ _CACHE = {
 
 CHUVA_MINIMA_HORA = 0.2
 
+# Até 3h sem chuva ainda pertence ao mesmo bloco meteorológico.
 INTERVALO_SECO_MAX_H = 3
 
 CHUVA_MINIMA_EVENTO_MM = 5.0
 
+# Depois do fim da chuva ainda acompanhamos a resposta do rio.
 JANELA_RESPOSTA_H = 36
 
 SUBIDA_MINIMA_RESPOSTA_M = 0.10
-
 MARGEM_SUSTENTADA_M = 0.08
+
+# Se o rio já subiu pelo menos este valor nas 3h anteriores
+# ao início da chuva, não tratamos aquela chuva como início
+# independente de uma resposta hidrológica.
+SUBIDA_PREVIA_M = 0.08
+
+# Chuvas diferentes que chegam exatamente ao mesmo pico
+# podem fazer parte da mesma onda hidrológica.
+MAX_GAP_MESMO_PICO_H = 24
+
+# Pequenas oscilações não devem virar "evento de cheia".
+ELEVACAO_MINIMA_EVENTO_M = 0.20
 
 
 # ============================================================
@@ -65,23 +78,21 @@ def para_float(valor):
     if valor is None:
         return None
 
-    texto = str(
-        valor
-    ).strip()
+    texto = str(valor).strip()
 
     if not texto:
         return None
 
-    texto = (
-        texto
-        .replace(".", "")
-        .replace(",", ".")
-    )
+    # CSV atual usa decimal brasileiro.
+    if "," in texto:
+        texto = (
+            texto
+            .replace(".", "")
+            .replace(",", ".")
+        )
 
     try:
-        return float(
-            texto
-        )
+        return float(texto)
 
     except Exception:
         return None
@@ -92,9 +103,7 @@ def para_data(valor):
     if not valor:
         return None
 
-    texto = str(
-        valor
-    ).strip()
+    texto = str(valor).strip()
 
     formatos = (
         "%Y-%m-%d %H:%M:%S",
@@ -106,7 +115,6 @@ def para_data(valor):
     for formato in formatos:
 
         try:
-
             return datetime.strptime(
                 texto,
                 formato,
@@ -116,7 +124,6 @@ def para_data(valor):
             pass
 
     try:
-
         return datetime.fromisoformat(
             texto
         )
@@ -132,7 +139,6 @@ def para_data(valor):
 def carregar_telemetria():
 
     if not ARQ_TELEMETRIA.exists():
-
         return []
 
     registros = []
@@ -153,15 +159,11 @@ def carregar_telemetria():
             for linha in leitor:
 
                 dt = para_data(
-                    linha.get(
-                        "data_hora"
-                    )
+                    linha.get("data_hora")
                 )
 
                 nivel = para_float(
-                    linha.get(
-                        "nivel_m"
-                    )
+                    linha.get("nivel_m")
                 )
 
                 if (
@@ -189,7 +191,6 @@ def carregar_telemetria():
                         ).strip(),
 
                         "data_hora": dt,
-
                         "nivel": nivel,
                     }
                 )
@@ -205,9 +206,7 @@ def carregar_telemetria():
         return []
 
     registros.sort(
-        key=lambda x: x[
-            "data_hora"
-        ]
+        key=lambda x: x["data_hora"]
     )
 
     return registros
@@ -314,7 +313,7 @@ def buscar_chuva_cabeceiras(
 
 
 # ============================================================
-# EVENTOS DE CHUVA
+# EVENTOS METEOROLOGICOS
 # ============================================================
 
 def detectar_eventos_chuva(
@@ -324,18 +323,14 @@ def detectar_eventos_chuva(
     molhados = [
         r
         for r in registros
-        if r["mm"]
-        >= CHUVA_MINIMA_HORA
+        if r["mm"] >= CHUVA_MINIMA_HORA
     ]
 
     if not molhados:
         return []
 
     grupos = []
-
-    grupo = [
-        molhados[0]
-    ]
+    grupo = [molhados[0]]
 
     for atual in molhados[1:]:
 
@@ -346,10 +341,7 @@ def detectar_eventos_chuva(
             - anterior["data_hora"]
         ).total_seconds() / 3600
 
-        if (
-            intervalo
-            <= INTERVALO_SECO_MAX_H
-        ):
+        if intervalo <= INTERVALO_SECO_MAX_H:
 
             grupo.append(
                 atual
@@ -361,9 +353,7 @@ def detectar_eventos_chuva(
                 grupo
             )
 
-            grupo = [
-                atual
-            ]
+            grupo = [atual]
 
     grupos.append(
         grupo
@@ -373,17 +363,8 @@ def detectar_eventos_chuva(
 
     for grupo in grupos:
 
-        inicio = grupo[
-            0
-        ][
-            "data_hora"
-        ]
-
-        fim = grupo[
-            -1
-        ][
-            "data_hora"
-        ]
+        inicio = grupo[0]["data_hora"]
+        fim = grupo[-1]["data_hora"]
 
         chuva_evento = [
             r
@@ -408,10 +389,7 @@ def detectar_eventos_chuva(
             default=0,
         )
 
-        if (
-            total
-            < CHUVA_MINIMA_EVENTO_MM
-        ):
+        if total < CHUVA_MINIMA_EVENTO_MM:
             continue
 
         eventos.append(
@@ -419,24 +397,25 @@ def detectar_eventos_chuva(
                 "inicio": inicio,
                 "fim": fim,
 
-                "chuva_mm": round(
-                    total,
-                    1,
-                ),
+                "chuva_mm":
+                    round(
+                        total,
+                        1,
+                    ),
 
-                "max_mm_h": round(
-                    maxima,
+                "max_mm_h":
+                    round(
+                        maxima,
+                        1,
+                    ),
+
+                "chuvas_agrupadas":
                     1,
-                ),
             }
         )
 
     return eventos
 
-
-# ============================================================
-# CLASSIFICACAO PARA LEITURA
-# ============================================================
 
 def classe_chuva(mm):
 
@@ -453,7 +432,7 @@ def classe_chuva(mm):
 
 
 # ============================================================
-# RESPOSTA DA ESTACAO
+# ANALISE DA RESPOSTA DO RIO
 # ============================================================
 
 def analisar_resposta(
@@ -461,13 +440,8 @@ def analisar_resposta(
     evento,
 ):
 
-    inicio = evento[
-        "inicio"
-    ]
-
-    fim_evento = evento[
-        "fim"
-    ]
+    inicio = evento["inicio"]
+    fim_evento = evento["fim"]
 
     limite = (
         fim_evento
@@ -475,11 +449,6 @@ def analisar_resposta(
             hours=JANELA_RESPOSTA_H
         )
     )
-
-    # --------------------------------------------------------
-    # NIVEL DE BASE
-    # 3 horas anteriores ao inicio da chuva
-    # --------------------------------------------------------
 
     base_inicio = (
         inicio
@@ -498,14 +467,15 @@ def analisar_resposta(
         )
     ]
 
-    if len(
-        base_registros
-    ) < 3:
+    if len(base_registros) < 3:
 
         return {
             "baseline": None,
+            "tendencia_previa_m": None,
+            "ja_estava_subindo": None,
             "resposta": None,
             "pico": None,
+            "elevacao_pico_m": None,
         }
 
     baseline = statistics.median(
@@ -513,6 +483,19 @@ def analisar_resposta(
             r["nivel"]
             for r in base_registros
         ]
+    )
+
+    primeiro_base = base_registros[0]["nivel"]
+    ultimo_base = base_registros[-1]["nivel"]
+
+    tendencia_previa = (
+        ultimo_base
+        - primeiro_base
+    )
+
+    ja_estava_subindo = (
+        tendencia_previa
+        >= SUBIDA_PREVIA_M
     )
 
     janela = [
@@ -528,14 +511,34 @@ def analisar_resposta(
     if not janela:
 
         return {
-            "baseline": baseline,
-            "resposta": None,
-            "pico": None,
+            "baseline":
+                round(
+                    baseline,
+                    2,
+                ),
+
+            "tendencia_previa_m":
+                round(
+                    tendencia_previa,
+                    2,
+                ),
+
+            "ja_estava_subindo":
+                ja_estava_subindo,
+
+            "resposta":
+                None,
+
+            "pico":
+                None,
+
+            "elevacao_pico_m":
+                None,
         }
 
-    # --------------------------------------------------------
+    # ========================================================
     # PRIMEIRA SUBIDA SUSTENTADA
-    # --------------------------------------------------------
+    # ========================================================
 
     resposta = None
 
@@ -566,8 +569,10 @@ def analisar_resposta(
         sustentados = sum(
             1
             for p in proximos
-            if p["nivel"]
-            >= limite_sustentado
+            if (
+                p["nivel"]
+                >= limite_sustentado
+            )
         )
 
         if sustentados >= 3:
@@ -575,15 +580,14 @@ def analisar_resposta(
             resposta = registro
             break
 
-    # --------------------------------------------------------
-    # MAIOR NIVEL NA JANELA
-    # --------------------------------------------------------
-
     pico = max(
         janela,
-        key=lambda x: x[
-            "nivel"
-        ],
+        key=lambda x: x["nivel"],
+    )
+
+    elevacao_pico = (
+        pico["nivel"]
+        - baseline
     )
 
     return {
@@ -593,16 +597,31 @@ def analisar_resposta(
                 2,
             ),
 
+        "tendencia_previa_m":
+            round(
+                tendencia_previa,
+                2,
+            ),
+
+        "ja_estava_subindo":
+            ja_estava_subindo,
+
         "resposta":
             resposta,
 
         "pico":
             pico,
+
+        "elevacao_pico_m":
+            round(
+                elevacao_pico,
+                2,
+            ),
     }
 
 
 # ============================================================
-# DURACAO
+# DURACOES
 # ============================================================
 
 def diferenca_minutos(
@@ -624,9 +643,7 @@ def diferenca_minutos(
         return None
 
     return int(
-        round(
-            valor
-        )
+        round(valor)
     )
 
 
@@ -638,8 +655,10 @@ def resumo_tempos(
         [
             int(v)
             for v in valores
-            if v is not None
-            and v >= 0
+            if (
+                v is not None
+                and v >= 0
+            )
         ]
     )
 
@@ -654,14 +673,10 @@ def resumo_tempos(
 
     return {
         "quantidade":
-            len(
-                valores
-            ),
+            len(valores),
 
         "min":
-            min(
-                valores
-            ),
+            min(valores),
 
         "mediana":
             int(
@@ -673,9 +688,493 @@ def resumo_tempos(
             ),
 
         "max":
-            max(
-                valores
+            max(valores),
+    }
+
+
+# ============================================================
+# PRIMEIRA ANALISE DOS BLOCOS DE CHUVA
+# ============================================================
+
+def montar_evento_analisado(
+    evento,
+    santa,
+    linha,
+):
+
+    resposta_santa = analisar_resposta(
+        santa,
+        evento,
+    )
+
+    resposta_linha = analisar_resposta(
+        linha,
+        evento,
+    )
+
+    return {
+        **evento,
+
+        "_resposta_santa":
+            resposta_santa,
+
+        "_resposta_linha":
+            resposta_linha,
+    }
+
+
+# ============================================================
+# AGRUPA CHUVAS QUE CONDUZEM AO MESMO PICO
+# ============================================================
+
+def consolidar_mesmo_pico(
+    eventos,
+    santa,
+    linha,
+):
+
+    if not eventos:
+        return []
+
+    ordenados = sorted(
+        eventos,
+        key=lambda e: e["inicio"],
+    )
+
+    consolidados = []
+
+    for atual in ordenados:
+
+        pico_atual = (
+            atual[
+                "_resposta_santa"
+            ].get(
+                "pico"
+            )
+        )
+
+        agrupado = False
+
+        if (
+            consolidados
+            and pico_atual
+        ):
+
+            anterior = consolidados[-1]
+
+            pico_anterior = (
+                anterior[
+                    "_resposta_santa"
+                ].get(
+                    "pico"
+                )
+            )
+
+            if pico_anterior:
+
+                mesmo_pico = (
+                    pico_atual[
+                        "data_hora"
+                    ]
+                    == pico_anterior[
+                        "data_hora"
+                    ]
+                )
+
+                gap_h = (
+                    atual["inicio"]
+                    - anterior["fim"]
+                ).total_seconds() / 3600
+
+                if (
+                    mesmo_pico
+                    and gap_h
+                    <= MAX_GAP_MESMO_PICO_H
+                ):
+
+                    anterior[
+                        "fim"
+                    ] = max(
+                        anterior["fim"],
+                        atual["fim"],
+                    )
+
+                    anterior[
+                        "chuva_mm"
+                    ] = round(
+                        anterior[
+                            "chuva_mm"
+                        ]
+                        + atual[
+                            "chuva_mm"
+                        ],
+                        1,
+                    )
+
+                    anterior[
+                        "max_mm_h"
+                    ] = max(
+                        anterior[
+                            "max_mm_h"
+                        ],
+                        atual[
+                            "max_mm_h"
+                        ],
+                    )
+
+                    anterior[
+                        "chuvas_agrupadas"
+                    ] = (
+                        anterior.get(
+                            "chuvas_agrupadas",
+                            1,
+                        )
+                        + atual.get(
+                            "chuvas_agrupadas",
+                            1,
+                        )
+                    )
+
+                    # Recalcula a resposta considerando
+                    # o episódio completo.
+                    anterior[
+                        "_resposta_santa"
+                    ] = analisar_resposta(
+                        santa,
+                        anterior,
+                    )
+
+                    anterior[
+                        "_resposta_linha"
+                    ] = analisar_resposta(
+                        linha,
+                        anterior,
+                    )
+
+                    agrupado = True
+
+        if not agrupado:
+
+            consolidados.append(
+                dict(atual)
+            )
+
+    return consolidados
+
+
+# ============================================================
+# CLASSIFICACAO DO EVENTO
+# ============================================================
+
+def validar_evento(
+    evento,
+):
+
+    santa = evento[
+        "_resposta_santa"
+    ]
+
+    if santa.get(
+        "baseline"
+    ) is None:
+
+        return (
+            False,
+            "Histórico insuficiente antes da chuva."
+        )
+
+    if santa.get(
+        "ja_estava_subindo"
+    ) is True:
+
+        return (
+            False,
+            (
+                "Santa Tereza já estava subindo "
+                "antes do início deste episódio de chuva."
+            )
+        )
+
+    if santa.get(
+        "resposta"
+    ) is None:
+
+        return (
+            False,
+            "Não foi detectada uma subida sustentada posterior."
+        )
+
+    if santa.get(
+        "pico"
+    ) is None:
+
+        return (
+            False,
+            "Não foi possível identificar o pico posterior."
+        )
+
+    elevacao = santa.get(
+        "elevacao_pico_m"
+    )
+
+    if (
+        elevacao is None
+        or elevacao
+        < ELEVACAO_MINIMA_EVENTO_M
+    ):
+
+        return (
+            False,
+            (
+                "A oscilação observada foi pequena "
+                "demais para aprendizado hidrológico."
+            )
+        )
+
+    return (
+        True,
+        (
+            "Rio estava estável antes da chuva "
+            "e apresentou subida sustentada posterior."
+        )
+    )
+
+
+# ============================================================
+# CONVERTE EVENTO PARA JSON
+# ============================================================
+
+def serializar_evento(
+    evento,
+):
+
+    rs = evento[
+        "_resposta_santa"
+    ]
+
+    rl = evento[
+        "_resposta_linha"
+    ]
+
+    inicio = evento[
+        "inicio"
+    ]
+
+    inicio_santa = (
+        rs["resposta"]["data_hora"]
+        if rs.get("resposta")
+        else None
+    )
+
+    pico_santa = (
+        rs["pico"]["data_hora"]
+        if rs.get("pico")
+        else None
+    )
+
+    inicio_linha = (
+        rl["resposta"]["data_hora"]
+        if rl.get("resposta")
+        else None
+    )
+
+    pico_linha = (
+        rl["pico"]["data_hora"]
+        if rl.get("pico")
+        else None
+    )
+
+    valido, motivo = validar_evento(
+        evento
+    )
+
+    tempo_resposta_santa = (
+        diferenca_minutos(
+            inicio,
+            inicio_santa,
+        )
+    )
+
+    tempo_pico_santa = (
+        diferenca_minutos(
+            inicio,
+            pico_santa,
+        )
+    )
+
+    tempo_resposta_linha = (
+        diferenca_minutos(
+            inicio,
+            inicio_linha,
+        )
+    )
+
+    linha_santa_pico = None
+
+    if (
+        pico_linha
+        and pico_santa
+    ):
+
+        linha_santa_pico = (
+            diferenca_minutos(
+                pico_linha,
+                pico_santa,
+            )
+        )
+
+    return {
+        "inicio":
+            inicio.isoformat(
+                timespec="minutes"
             ),
+
+        "fim":
+            evento[
+                "fim"
+            ].isoformat(
+                timespec="minutes"
+            ),
+
+        "chuva_mm":
+            evento[
+                "chuva_mm"
+            ],
+
+        "max_mm_h":
+            evento[
+                "max_mm_h"
+            ],
+
+        "classe":
+            classe_chuva(
+                evento[
+                    "chuva_mm"
+                ]
+            ),
+
+        "chuvas_agrupadas":
+            evento.get(
+                "chuvas_agrupadas",
+                1,
+            ),
+
+        "valido_aprendizado":
+            valido,
+
+        "motivo_validacao":
+            motivo,
+
+        "linha": {
+            "baseline":
+                rl.get(
+                    "baseline"
+                ),
+
+            "tendencia_previa_m":
+                rl.get(
+                    "tendencia_previa_m"
+                ),
+
+            "ja_estava_subindo":
+                rl.get(
+                    "ja_estava_subindo"
+                ),
+
+            "resposta":
+                (
+                    inicio_linha.isoformat(
+                        timespec="minutes"
+                    )
+                    if inicio_linha
+                    else None
+                ),
+
+            "pico":
+                (
+                    pico_linha.isoformat(
+                        timespec="minutes"
+                    )
+                    if pico_linha
+                    else None
+                ),
+
+            "pico_nivel":
+                (
+                    round(
+                        rl["pico"][
+                            "nivel"
+                        ],
+                        2,
+                    )
+                    if rl.get("pico")
+                    else None
+                ),
+
+            "tempo_resposta_min":
+                tempo_resposta_linha,
+        },
+
+        "santa": {
+            "baseline":
+                rs.get(
+                    "baseline"
+                ),
+
+            "tendencia_previa_m":
+                rs.get(
+                    "tendencia_previa_m"
+                ),
+
+            "ja_estava_subindo":
+                rs.get(
+                    "ja_estava_subindo"
+                ),
+
+            "resposta":
+                (
+                    inicio_santa.isoformat(
+                        timespec="minutes"
+                    )
+                    if inicio_santa
+                    else None
+                ),
+
+            "pico":
+                (
+                    pico_santa.isoformat(
+                        timespec="minutes"
+                    )
+                    if pico_santa
+                    else None
+                ),
+
+            "pico_nivel":
+                (
+                    round(
+                        rs["pico"][
+                            "nivel"
+                        ],
+                        2,
+                    )
+                    if rs.get("pico")
+                    else None
+                ),
+
+            "elevacao_pico_m":
+                rs.get(
+                    "elevacao_pico_m"
+                ),
+
+            "tempo_resposta_min":
+                tempo_resposta_santa,
+
+            "tempo_pico_min":
+                tempo_pico_santa,
+        },
+
+        "linha_santa_pico_min":
+            linha_santa_pico,
     }
 
 
@@ -691,17 +1190,11 @@ def analisar_eventos_hidrologicos(
 
     if (
         not forcar
-        and _CACHE[
-            "dados"
-        ] is not None
-        and _CACHE[
-            "momento"
-        ] is not None
+        and _CACHE["dados"] is not None
+        and _CACHE["momento"] is not None
         and (
             agora
-            - _CACHE[
-                "momento"
-            ]
+            - _CACHE["momento"]
         ).total_seconds()
         < CACHE_MINUTOS * 60
     ):
@@ -710,9 +1203,7 @@ def analisar_eventos_hidrologicos(
             "dados"
         ]
 
-    telemetria = (
-        carregar_telemetria()
-    )
+    telemetria = carregar_telemetria()
 
     if not telemetria:
 
@@ -744,18 +1235,15 @@ def analisar_eventos_hidrologicos(
 
     try:
 
-        chuva = (
-            buscar_chuva_cabeceiras(
-                inicio,
-                fim_telemetria,
-            )
+        chuva = buscar_chuva_cabeceiras(
+            inicio,
+            fim_telemetria,
         )
 
     except Exception as e:
 
         resultado = {
             "ok": False,
-
             "erro": (
                 "Não foi possível consultar "
                 "a chuva histórica das cabeceiras: "
@@ -763,20 +1251,13 @@ def analisar_eventos_hidrologicos(
             ),
         }
 
-        _CACHE[
-            "momento"
-        ] = agora
-
-        _CACHE[
-            "dados"
-        ] = resultado
+        _CACHE["momento"] = agora
+        _CACHE["dados"] = resultado
 
         return resultado
 
-    eventos_chuva = (
-        detectar_eventos_chuva(
-            chuva
-        )
+    eventos_chuva = detectar_eventos_chuva(
+        chuva
     )
 
     santa = serie_estacao(
@@ -789,268 +1270,60 @@ def analisar_eventos_hidrologicos(
         "86472000",
     )
 
-    eventos = []
-
-    for evento in eventos_chuva:
-
-        resposta_santa = (
-            analisar_resposta(
-                santa,
-                evento,
-            )
+    preliminares = [
+        montar_evento_analisado(
+            evento,
+            santa,
+            linha,
         )
+        for evento in eventos_chuva
+    ]
 
-        resposta_linha = (
-            analisar_resposta(
-                linha,
-                evento,
-            )
+    consolidados = consolidar_mesmo_pico(
+        preliminares,
+        santa,
+        linha,
+    )
+
+    eventos = [
+        serializar_evento(
+            evento
         )
-
-        inicio_chuva = evento[
-            "inicio"
-        ]
-
-        inicio_santa = (
-            resposta_santa[
-                "resposta"
-            ][
-                "data_hora"
-            ]
-            if resposta_santa[
-                "resposta"
-            ]
-            else None
-        )
-
-        pico_santa = (
-            resposta_santa[
-                "pico"
-            ][
-                "data_hora"
-            ]
-            if resposta_santa[
-                "pico"
-            ]
-            else None
-        )
-
-        inicio_linha = (
-            resposta_linha[
-                "resposta"
-            ][
-                "data_hora"
-            ]
-            if resposta_linha[
-                "resposta"
-            ]
-            else None
-        )
-
-        pico_linha = (
-            resposta_linha[
-                "pico"
-            ][
-                "data_hora"
-            ]
-            if resposta_linha[
-                "pico"
-            ]
-            else None
-        )
-
-        tempo_resposta_santa = (
-            diferenca_minutos(
-                inicio_chuva,
-                inicio_santa,
-            )
-        )
-
-        tempo_pico_santa = (
-            diferenca_minutos(
-                inicio_chuva,
-                pico_santa,
-            )
-        )
-
-        tempo_resposta_linha = (
-            diferenca_minutos(
-                inicio_chuva,
-                inicio_linha,
-            )
-        )
-
-        linha_santa_pico = None
-
-        if (
-            pico_linha
-            and pico_santa
-        ):
-
-            diff = diferenca_minutos(
-                pico_linha,
-                pico_santa,
-            )
-
-            linha_santa_pico = diff
-
-        eventos.append(
-            {
-                "inicio":
-                    inicio_chuva.isoformat(
-                        timespec="minutes"
-                    ),
-
-                "fim":
-                    evento[
-                        "fim"
-                    ].isoformat(
-                        timespec="minutes"
-                    ),
-
-                "chuva_mm":
-                    evento[
-                        "chuva_mm"
-                    ],
-
-                "max_mm_h":
-                    evento[
-                        "max_mm_h"
-                    ],
-
-                "classe":
-                    classe_chuva(
-                        evento[
-                            "chuva_mm"
-                        ]
-                    ),
-
-                "linha": {
-                    "baseline":
-                        resposta_linha[
-                            "baseline"
-                        ],
-
-                    "resposta":
-                        (
-                            inicio_linha.isoformat(
-                                timespec="minutes"
-                            )
-                            if inicio_linha
-                            else None
-                        ),
-
-                    "pico":
-                        (
-                            pico_linha.isoformat(
-                                timespec="minutes"
-                            )
-                            if pico_linha
-                            else None
-                        ),
-
-                    "pico_nivel":
-                        (
-                            round(
-                                resposta_linha[
-                                    "pico"
-                                ][
-                                    "nivel"
-                                ],
-                                2,
-                            )
-                            if resposta_linha[
-                                "pico"
-                            ]
-                            else None
-                        ),
-
-                    "tempo_resposta_min":
-                        tempo_resposta_linha,
-                },
-
-                "santa": {
-                    "baseline":
-                        resposta_santa[
-                            "baseline"
-                        ],
-
-                    "resposta":
-                        (
-                            inicio_santa.isoformat(
-                                timespec="minutes"
-                            )
-                            if inicio_santa
-                            else None
-                        ),
-
-                    "pico":
-                        (
-                            pico_santa.isoformat(
-                                timespec="minutes"
-                            )
-                            if pico_santa
-                            else None
-                        ),
-
-                    "pico_nivel":
-                        (
-                            round(
-                                resposta_santa[
-                                    "pico"
-                                ][
-                                    "nivel"
-                                ],
-                                2,
-                            )
-                            if resposta_santa[
-                                "pico"
-                            ]
-                            else None
-                        ),
-
-                    "tempo_resposta_min":
-                        tempo_resposta_santa,
-
-                    "tempo_pico_min":
-                        tempo_pico_santa,
-                },
-
-                "linha_santa_pico_min":
-                    linha_santa_pico,
-            }
-        )
+        for evento in consolidados
+    ]
 
     eventos.sort(
-        key=lambda x: x[
-            "inicio"
-        ],
+        key=lambda x: x["inicio"],
         reverse=True,
     )
 
+    validos = [
+        e
+        for e in eventos
+        if e.get(
+            "valido_aprendizado"
+        )
+    ]
+
     tempos_resposta = [
-        e[
-            "santa"
-        ][
+        e["santa"][
             "tempo_resposta_min"
         ]
-        for e in eventos
+        for e in validos
     ]
 
     tempos_pico = [
-        e[
-            "santa"
-        ][
+        e["santa"][
             "tempo_pico_min"
         ]
-        for e in eventos
+        for e in validos
     ]
 
     linha_santa = [
         e[
             "linha_santa_pico_min"
         ]
-        for e in eventos
+        for e in validos
     ]
 
     resultado = {
@@ -1074,9 +1347,19 @@ def analisar_eventos_hidrologicos(
                 ),
         },
 
+        "eventos_encontrados":
+            len(eventos),
+
         "eventos_analisados":
-            len(
-                eventos
+            len(eventos),
+
+        "eventos_validos":
+            len(validos),
+
+        "eventos_informativos":
+            (
+                len(eventos)
+                - len(validos)
             ),
 
         "resumo": {
@@ -1097,16 +1380,11 @@ def analisar_eventos_hidrologicos(
         },
 
         "eventos":
-            eventos[:10],
+            eventos[:12],
     }
 
-    _CACHE[
-        "momento"
-    ] = agora
-
-    _CACHE[
-        "dados"
-    ] = resultado
+    _CACHE["momento"] = agora
+    _CACHE["dados"] = resultado
 
     return resultado
 
@@ -1143,12 +1421,32 @@ def gerar_html_eventos_hidrologicos():
     font-size:11px;
 }
 
+.eventos-contagem {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:13px;
+}
+
+.eventos-contagem span {
+    padding:6px 9px;
+    border-radius:7px;
+    background:#0c1418;
+    border:1px solid #293a43;
+    color:#91aab6;
+    font-size:10px;
+}
+
+.eventos-contagem strong {
+    color:#fff;
+}
+
 .eventos-resumo {
     display:grid;
     grid-template-columns:
         repeat(3,minmax(0,1fr));
     gap:10px;
-    margin-top:16px;
+    margin-top:13px;
 }
 
 .eventos-card {
@@ -1189,6 +1487,10 @@ def gerar_html_eventos_hidrologicos():
     border:1px solid #263740;
 }
 
+.evento-item-informativo {
+    opacity:.78;
+}
+
 .evento-topo {
     display:flex;
     justify-content:space-between;
@@ -1207,6 +1509,39 @@ def gerar_html_eventos_hidrologicos():
     color:#9fc9de;
     font-size:12px;
     font-weight:700;
+}
+
+.evento-validacao {
+    margin-top:8px;
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+}
+
+.evento-badge {
+    display:inline-block;
+    padding:4px 7px;
+    border-radius:6px;
+    font-size:9px;
+    font-weight:800;
+}
+
+.evento-valido {
+    color:#a9dfc3;
+    background:#10231b;
+    border:1px solid #315943;
+}
+
+.evento-info {
+    color:#c1ccd1;
+    background:#182126;
+    border:1px solid #39484f;
+}
+
+.evento-motivo {
+    color:#718d9a;
+    font-size:9px;
 }
 
 .evento-grid {
@@ -1314,9 +1649,7 @@ function duracao(
 
     minutos =
         Math.round(
-            Number(
-                minutos
-            )
+            Number(minutos)
         );
 
     const h =
@@ -1331,13 +1664,10 @@ function duracao(
         h > 0
         && m > 0
     ) {
-
         return (
             h
             + "h"
-            + String(
-                m
-            ).padStart(
+            + String(m).padStart(
                 2,
                 "0"
             )
@@ -1386,11 +1716,19 @@ function resumoCard(
 
         return `
         <div class="eventos-card">
-            <span>${titulo}</span>
-            <strong>EM APRENDIZADO</strong>
+
+            <span>
+                ${titulo}
+            </span>
+
+            <strong>
+                EM APRENDIZADO
+            </strong>
+
             <div class="eventos-faixa">
-                Ainda sem eventos suficientes.
+                Ainda sem eventos válidos suficientes.
             </div>
+
         </div>
         `;
     }
@@ -1415,7 +1753,7 @@ function resumoCard(
             ${duracao(dados.max)}
             ·
             ${dados.quantidade}
-            evento(s)
+            evento(s) válido(s)
         </div>
 
     </div>
@@ -1461,10 +1799,6 @@ async function carregarEventos() {
                 `
                 Não foi possível analisar
                 os eventos neste momento.
-                <br>
-                <small>
-                    ${dados.erro || ""}
-                </small>
                 `;
 
             return;
@@ -1475,6 +1809,31 @@ async function carregarEventos() {
 
         let html =
             `
+            <div class="eventos-contagem">
+
+                <span>
+                    Eventos encontrados:
+                    <strong>
+                        ${dados.eventos_encontrados || 0}
+                    </strong>
+                </span>
+
+                <span>
+                    Válidos para aprendizado:
+                    <strong>
+                        ${dados.eventos_validos || 0}
+                    </strong>
+                </span>
+
+                <span>
+                    Apenas informativos:
+                    <strong>
+                        ${dados.eventos_informativos || 0}
+                    </strong>
+                </span>
+
+            </div>
+
             <div class="eventos-resumo">
 
                 ${resumoCard(
@@ -1503,9 +1862,8 @@ async function carregarEventos() {
             html +=
                 `
                 <div class="eventos-status">
-                    Nenhum evento de chuva relevante
-                    foi encontrado no período histórico
-                    atualmente disponível.
+                    Nenhum evento relevante encontrado
+                    no histórico atual.
                 </div>
                 `;
         }
@@ -1520,9 +1878,47 @@ async function carregarEventos() {
             eventos.forEach(
                 evento => {
 
+                    const valido =
+                        !!evento.valido_aprendizado;
+
+                    const classeItem =
+                        valido
+                        ? ""
+                        : " evento-item-informativo";
+
+                    const classeBadge =
+                        valido
+                        ? "evento-valido"
+                        : "evento-info";
+
+                    const textoBadge =
+                        valido
+                        ? "✓ VÁLIDO PARA APRENDIZADO"
+                        : "○ INFORMATIVO";
+
+                    let agrupamento = "";
+
+                    if (
+                        Number(
+                            evento.chuvas_agrupadas
+                            || 1
+                        ) > 1
+                    ) {
+
+                        agrupamento =
+                            " · "
+                            + evento.chuvas_agrupadas
+                            + " blocos de chuva agrupados";
+                    }
+
                     html +=
                         `
-                        <div class="evento-item">
+                        <div
+                            class="
+                                evento-item
+                                ${classeItem}
+                            "
+                        >
 
                             <div class="evento-topo">
 
@@ -1546,56 +1942,86 @@ async function carregarEventos() {
                                     mm
                                     ·
                                     ${evento.classe}
+                                    ${agrupamento}
                                 </div>
+
+                            </div>
+
+                            <div class="evento-validacao">
+
+                                <span
+                                    class="
+                                        evento-badge
+                                        ${classeBadge}
+                                    "
+                                >
+                                    ${textoBadge}
+                                </span>
+
+                                <span class="evento-motivo">
+                                    ${evento.motivo_validacao || ""}
+                                </span>
 
                             </div>
 
                             <div class="evento-grid">
 
                                 <div class="evento-dado">
+
                                     <span>
                                         Início da chuva
                                     </span>
+
                                     <strong>
                                         ${dataHora(
                                             evento.inicio
                                         )}
                                     </strong>
+
                                 </div>
 
                                 <div class="evento-dado">
+
                                     <span>
                                         Santa começou a responder
                                     </span>
+
                                     <strong>
                                         ${dataHora(
                                             evento.santa.resposta
                                         )}
                                     </strong>
+
                                 </div>
 
                                 <div class="evento-dado">
+
                                     <span>
                                         Chuva → resposta Santa
                                     </span>
+
                                     <strong>
                                         ${duracao(
                                             evento.santa
                                                 .tempo_resposta_min
                                         )}
                                     </strong>
+
                                 </div>
 
                                 <div class="evento-dado">
+
                                     <span>
                                         Chuva → pico Santa
                                     </span>
+
                                     <strong>
                                         ${duracao(
                                             evento.santa
                                                 .tempo_pico_min
                                         )}
                                     </strong>
+
                                 </div>
 
                             </div>
@@ -1612,13 +2038,16 @@ async function carregarEventos() {
         html +=
             `
             <div class="eventos-nota">
+                As estatísticas do topo utilizam somente
+                eventos classificados como válidos para aprendizado.
+                Chuvas ocorridas enquanto o rio já estava subindo,
+                eventos sem histórico anterior suficiente e
+                duplicações do mesmo pico permanecem apenas como
+                informação e não alteram a mediana.
                 Chuva das cabeceiras:
                 ${dados.fonte_chuva}.
-                O início da resposta do rio é identificado
-                por uma elevação sustentada em relação ao
-                nível anterior ao evento.
-                Esta análise é experimental e não representa
-                previsão ou alerta oficial.
+                Análise experimental — não representa previsão
+                ou alerta oficial.
             </div>
             `;
 
