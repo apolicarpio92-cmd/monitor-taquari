@@ -39,6 +39,11 @@ from previsao_semana import (
 )
 
 
+from historico_graficos import (
+    gerar_html_graficos_historicos,
+)
+
+
 BASE_DIR = Path(__file__).resolve().parent
 
 # ============================================================
@@ -658,6 +663,10 @@ def dashboard():
                 flush=True,
             )
 
+    html_graficos = (
+        gerar_html_graficos_historicos()
+    )
+
     html_previsao = (
         gerar_html_previsao_semana(
             previsao_exibir
@@ -723,7 +732,9 @@ def dashboard():
 
         html = html.replace(
             marcador_previsao,
-            html_previsao_cabeceiras
+            html_graficos
+            + "\n"
+            + html_previsao_cabeceiras
             + "\n"
             + html_previsao
             + "\n"
@@ -737,7 +748,9 @@ def dashboard():
     ):
 
         html += (
-            html_previsao_cabeceiras
+            html_graficos
+            + "\n"
+            + html_previsao_cabeceiras
             + "\n"
             + html_previsao
         )
