@@ -412,6 +412,83 @@ def gerar_html_graficos_historicos():
     color:#fff;
 }
 
+.hist-propagacao {
+    margin-bottom:16px;
+    padding:15px;
+    border-radius:13px;
+    background:#0d171c;
+    border:1px solid #2b3d46;
+}
+
+.hist-propagacao-titulo {
+    color:#8fb8d0;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.035em;
+    margin-bottom:12px;
+}
+
+.hist-propagacao-grid {
+    display:grid;
+    grid-template-columns:
+        1fr 1fr 1fr;
+    gap:9px;
+}
+
+.hist-propagacao-item {
+    background:#091216;
+    border:1px solid #22323a;
+    border-radius:9px;
+    padding:10px 12px;
+}
+
+.hist-propagacao-item span {
+    display:block;
+    color:#6f8d9c;
+    font-size:9px;
+    margin-bottom:4px;
+}
+
+.hist-propagacao-item strong {
+    display:block;
+    color:#ffffff;
+    font-size:14px;
+}
+
+.hist-propagacao-destaque {
+    border-color:#426174;
+}
+
+.hist-propagacao-destaque strong {
+    color:#a9dcf5;
+    font-size:18px;
+}
+
+.hist-propagacao-texto {
+    margin-top:11px;
+    color:#c1d0d7;
+    font-size:12px;
+    line-height:1.55;
+}
+
+.hist-propagacao-texto strong {
+    color:#ffffff;
+}
+
+.hist-propagacao-nota {
+    margin-top:7px;
+    color:#66818f;
+    font-size:9px;
+    line-height:1.4;
+}
+
+@media (max-width:700px) {
+
+    .hist-propagacao-grid {
+        grid-template-columns:1fr;
+    }
+}
+
 .hist-grid {
     display:grid;
     grid-template-columns:
@@ -681,6 +758,21 @@ def gerar_html_graficos_historicos():
 
         </div>
 
+    </div>
+
+    <div
+        id="hist-propagacao"
+        class="hist-propagacao"
+    >
+        <div class="hist-propagacao-titulo">
+            COMPORTAMENTO ENTRE AS ESTAÇÕES
+        </div>
+
+        <div
+            id="hist-propagacao-conteudo"
+        >
+            Calculando dados do período...
+        </div>
     </div>
 
     <div class="hist-grid">
@@ -1796,6 +1888,298 @@ function desenhar(
 }
 
 
+function duracaoTexto(
+    minutos
+) {
+
+    if (
+        minutos === null
+        || minutos === undefined
+        || !Number.isFinite(
+            minutos
+        )
+    ) {
+        return "-";
+    }
+
+    minutos =
+        Math.round(
+            Math.abs(
+                minutos
+            )
+        );
+
+    const horas =
+        Math.floor(
+            minutos / 60
+        );
+
+    const resto =
+        minutos % 60;
+
+    if (
+        horas > 0
+        && resto > 0
+    ) {
+        return (
+            horas
+            + "h"
+            + String(
+                resto
+            ).padStart(
+                2,
+                "0"
+            )
+        );
+    }
+
+    if (horas > 0) {
+        return horas + "h";
+    }
+
+    return minutos + " min";
+}
+
+
+function maiorRegistro(
+    serie
+) {
+
+    if (
+        !serie
+        || !serie.length
+    ) {
+        return null;
+    }
+
+    return serie.reduce(
+        (
+            maior,
+            atual
+        ) => {
+
+            return (
+                Number(
+                    atual.v
+                )
+                > Number(
+                    maior.v
+                )
+            )
+            ? atual
+            : maior;
+        }
+    );
+}
+
+
+function analisarDefasagem() {
+
+    const destino =
+        document.getElementById(
+            "hist-propagacao-conteudo"
+        );
+
+    if (!destino) {
+        return;
+    }
+
+    const santa =
+        filtrar(
+            DADOS.series.santa_nivel
+        );
+
+    const linha =
+        filtrar(
+            DADOS.series.linha_nivel
+        );
+
+    if (
+        santa.length < 2
+        || linha.length < 2
+    ) {
+
+        destino.innerHTML =
+            `
+            <div class="hist-propagacao-texto">
+                Ainda não há histórico suficiente
+                das duas estações para comparar
+                os picos neste período.
+            </div>
+            `;
+
+        return;
+    }
+
+    const picoSanta =
+        maiorRegistro(
+            santa
+        );
+
+    const picoLinha =
+        maiorRegistro(
+            linha
+        );
+
+    if (
+        !picoSanta
+        || !picoLinha
+    ) {
+        return;
+    }
+
+    const dtSanta =
+        new Date(
+            picoSanta.t
+        );
+
+    const dtLinha =
+        new Date(
+            picoLinha.t
+        );
+
+    const diferencaMinutos =
+        (
+            dtSanta.getTime()
+            - dtLinha.getTime()
+        )
+        / 60000;
+
+    const diferencaAbs =
+        Math.abs(
+            diferencaMinutos
+        );
+
+    let leitura = "";
+
+    if (
+        diferencaAbs < 15
+    ) {
+
+        leitura =
+            "Os maiores níveis das duas estações "
+            + "ocorreram praticamente no mesmo horário "
+            + "dentro deste período.";
+    }
+
+    else if (
+        diferencaMinutos > 0
+    ) {
+
+        leitura =
+            "Neste período, o pico em "
+            + "<strong>Linha José Júlio</strong> "
+            + "ocorreu "
+            + "<strong>"
+            + duracaoTexto(
+                diferencaMinutos
+            )
+            + " antes</strong> "
+            + "do pico registrado em "
+            + "<strong>Santa Tereza</strong>.";
+    }
+
+    else {
+
+        leitura =
+            "Neste período, o maior nível em "
+            + "<strong>Santa Tereza</strong> "
+            + "foi registrado "
+            + "<strong>"
+            + duracaoTexto(
+                diferencaMinutos
+            )
+            + " antes</strong> "
+            + "do maior nível observado em "
+            + "<strong>Linha José Júlio</strong>.";
+    }
+
+    destino.innerHTML =
+        `
+        <div class="hist-propagacao-grid">
+
+            <div class="hist-propagacao-item">
+
+                <span>
+                    Pico — Linha José Júlio
+                </span>
+
+                <strong>
+                    ${numeroBR(
+                        picoLinha.v,
+                        2
+                    )} m
+                </strong>
+
+                <span style="margin-top:5px">
+                    ${horaBR(
+                        picoLinha.t
+                    )}
+                </span>
+
+            </div>
+
+            <div class="hist-propagacao-item">
+
+                <span>
+                    Pico — Santa Tereza
+                </span>
+
+                <strong>
+                    ${numeroBR(
+                        picoSanta.v,
+                        2
+                    )} m
+                </strong>
+
+                <span style="margin-top:5px">
+                    ${horaBR(
+                        picoSanta.t
+                    )}
+                </span>
+
+            </div>
+
+            <div
+                class="
+                    hist-propagacao-item
+                    hist-propagacao-destaque
+                "
+            >
+
+                <span>
+                    Defasagem observada entre os picos
+                </span>
+
+                <strong>
+                    ${duracaoTexto(
+                        diferencaMinutos
+                    )}
+                </strong>
+
+                <span style="margin-top:5px">
+                    ${periodoTexto()}
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="hist-propagacao-texto">
+            ${leitura}
+        </div>
+
+        <div class="hist-propagacao-nota">
+            Comparação experimental baseada nos horários
+            dos maiores níveis observados no período selecionado.
+            A diferença entre picos não deve ser interpretada
+            isoladamente como tempo exato de deslocamento da água
+            ou como previsão oficial.
+        </div>
+        `;
+}
+
+
 function renderizar() {
 
     desenhar(
@@ -1827,6 +2211,8 @@ function renderizar() {
         0,
         "vazao"
     );
+
+    analisarDefasagem();
 }
 
 
