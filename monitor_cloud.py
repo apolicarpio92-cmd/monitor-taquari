@@ -4,9 +4,11 @@ import csv
 import json
 import math
 import os
+import queue
 import statistics
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import webbrowser
@@ -71,6 +73,9 @@ def marcar_etapa(nome):
         ),
         flush=True,
     )
+
+
+_ANA_THREAD_ATIVA = None
 
 
 ANA_URL = (
@@ -214,91 +219,137 @@ def requisicao_ana_isolada(
     params,
 ):
 
-    worker = (
-        BASE_DIR
-        / "ana_http_worker.py"
+    global _ANA_THREAD_ATIVA
+
+    # --------------------------------------------------------
+    # Se uma tentativa anterior ainda estiver bloqueada,
+    # nao cria outra thread.
+    # --------------------------------------------------------
+
+    if (
+        _ANA_THREAD_ATIVA is not None
+        and _ANA_THREAD_ATIVA.is_alive()
+    ):
+
+        raise TimeoutError(
+            (
+                "Requisicao ANA anterior "
+                "ainda esta bloqueada. "
+                "Usando fallback local."
+            )
+        )
+
+    resultado = queue.Queue(
+        maxsize=1
     )
 
-    comando = [
-        sys.executable,
-        str(worker),
-        str(url),
-        json.dumps(
-            params,
-            ensure_ascii=False,
-        ),
-    ]
+    def executar():
 
-    inicio = time.monotonic()
+        try:
 
-    try:
+            resposta = requests.get(
+                url,
+                params=params,
+                timeout=(4, 6),
+                headers={
+                    "User-Agent":
+                        "Monitor-Taquari-V3/1.0"
+                },
+            )
 
-        processo = subprocess.run(
-            comando,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=12,
-            check=False,
-        )
+            resposta.raise_for_status()
 
-    except subprocess.TimeoutExpired:
+            if not resposta.content:
 
-        duracao = (
-            time.monotonic()
-            - inicio
-        )
+                raise RuntimeError(
+                    "Resposta vazia da ANA"
+                )
+
+            resultado.put(
+                (
+                    "ok",
+                    resposta,
+                )
+            )
+
+        except Exception as e:
+
+            try:
+
+                resultado.put(
+                    (
+                        "erro",
+                        (
+                            type(e).__name__
+                            + ": "
+                            + str(e)
+                        ),
+                    )
+                )
+
+            except Exception:
+                pass
+
+    thread = threading.Thread(
+        target=executar,
+        daemon=True,
+        name="monitor-ana-http",
+    )
+
+    _ANA_THREAD_ATIVA = thread
+
+    inicio_http = time.monotonic()
+
+    thread.start()
+
+    # --------------------------------------------------------
+    # Este timeout independe do requests.
+    #
+    # Mesmo que DNS/socket fique preso, o ciclo principal
+    # volta depois de no maximo 12 segundos.
+    # --------------------------------------------------------
+
+    thread.join(
+        timeout=12
+    )
+
+    duracao = (
+        time.monotonic()
+        - inicio_http
+    )
+
+    if thread.is_alive():
 
         raise TimeoutError(
             (
                 "ANA excedeu timeout rigido "
-                f"de 12s ({duracao:.1f}s)"
+                f"de 12s ({duracao:.1f}s). "
+                "Thread abandonada; fallback local."
             )
         )
 
-    duracao = (
-        time.monotonic()
-        - inicio
-    )
+    try:
 
-    if processo.returncode != 0:
+        status, payload = (
+            resultado.get_nowait()
+        )
 
-        erro = processo.stderr.decode(
-            "utf-8",
-            errors="replace",
-        ).strip()
+    except queue.Empty:
 
         raise RuntimeError(
             (
-                f"Worker ANA falhou em {duracao:.2f}s: "
-                + (
-                    erro
-                    or (
-                        "codigo "
-                        + str(
-                            processo.returncode
-                        )
-                    )
-                )
+                "Thread ANA terminou sem "
+                "retornar resultado."
             )
         )
 
-    conteudo = processo.stdout
-
-    if not conteudo:
+    if status != "ok":
 
         raise RuntimeError(
-            "Worker ANA retornou resposta vazia."
+            str(payload)
         )
 
-    resposta = requests.Response()
-
-    resposta.status_code = 200
-    resposta._content = conteudo
-    resposta.url = str(url)
-    resposta.encoding = "utf-8"
-
-    return resposta
-
+    return payload
 
 def buscar_ana(
     nome,
