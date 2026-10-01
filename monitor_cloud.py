@@ -5,6 +5,8 @@ import json
 import math
 import os
 import statistics
+import subprocess
+import sys
 import time
 import traceback
 import webbrowser
@@ -207,6 +209,97 @@ def converter_data(valor):
 # ANA
 # ============================================================
 
+def requisicao_ana_isolada(
+    url,
+    params,
+):
+
+    worker = (
+        BASE_DIR
+        / "ana_http_worker.py"
+    )
+
+    comando = [
+        sys.executable,
+        str(worker),
+        str(url),
+        json.dumps(
+            params,
+            ensure_ascii=False,
+        ),
+    ]
+
+    inicio = time.monotonic()
+
+    try:
+
+        processo = subprocess.run(
+            comando,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=12,
+            check=False,
+        )
+
+    except subprocess.TimeoutExpired:
+
+        duracao = (
+            time.monotonic()
+            - inicio
+        )
+
+        raise TimeoutError(
+            (
+                "ANA excedeu timeout rigido "
+                f"de 12s ({duracao:.1f}s)"
+            )
+        )
+
+    duracao = (
+        time.monotonic()
+        - inicio
+    )
+
+    if processo.returncode != 0:
+
+        erro = processo.stderr.decode(
+            "utf-8",
+            errors="replace",
+        ).strip()
+
+        raise RuntimeError(
+            (
+                f"Worker ANA falhou em {duracao:.2f}s: "
+                + (
+                    erro
+                    or (
+                        "codigo "
+                        + str(
+                            processo.returncode
+                        )
+                    )
+                )
+            )
+        )
+
+    conteudo = processo.stdout
+
+    if not conteudo:
+
+        raise RuntimeError(
+            "Worker ANA retornou resposta vazia."
+        )
+
+    resposta = requests.Response()
+
+    resposta.status_code = 200
+    resposta._content = conteudo
+    resposta.url = str(url)
+    resposta.encoding = "utf-8"
+
+    return resposta
+
+
 def buscar_ana(
     nome,
     codigo,
@@ -257,14 +350,11 @@ def buscar_ana(
 
             inicio_http = time.monotonic()
 
-            resposta_teste = requests.get(
-                url_ana,
-                params=params,
-                timeout=TIMEOUT_ANA,
-                headers={
-                    "User-Agent":
-                        "Monitor-Taquari-V3/1.0"
-                },
+            resposta_teste = (
+                requisicao_ana_isolada(
+                    url_ana,
+                    params,
+                )
             )
 
             resposta_teste.raise_for_status()
