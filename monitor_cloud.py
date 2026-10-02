@@ -26,6 +26,7 @@ from barragens_historico_web import (
     atualizar_historico_barragens,
 )
 
+from cameras_vale_vivo import coletar_cameras_vale_vivo
 from satelite_copernicus import (
     coletar_imagens_atuais,
 )
@@ -1698,6 +1699,484 @@ def gerar_barragens_html(barragens):
 # DASHBOARD
 # ============================================================
 
+def gerar_monitoramento_visual_html(
+    cameras,
+):
+
+    import html as _html
+
+    if not cameras:
+
+        return """
+        <div class="vv-sem-dados">
+            Não foi possível consultar as câmeras
+            neste momento.
+        </div>
+        """
+
+    def esc(valor):
+
+        return _html.escape(
+            str(
+                valor
+                if valor is not None
+                else ""
+            ),
+            quote=True,
+        )
+
+    # --------------------------------------------------------
+    # Escolhe a primeira transmissão disponível.
+    # Normalmente será Santa Tereza.
+    # --------------------------------------------------------
+
+    inicial = None
+
+    for camera in cameras:
+
+        if (
+            camera.get("video_id")
+            and camera.get("status")
+            in (
+                "ao_vivo",
+                "disponivel",
+            )
+        ):
+
+            inicial = camera
+            break
+
+    if inicial is None:
+
+        inicial = cameras[0]
+
+    botoes = []
+
+    for camera in cameras:
+
+        status = camera.get(
+            "status",
+            "indisponivel",
+        )
+
+        if status == "ao_vivo":
+
+            classe_status = "online"
+            bolinha = "●"
+
+        elif status == "disponivel":
+
+            classe_status = "disponivel"
+            bolinha = "●"
+
+        elif status == "desconectada":
+
+            classe_status = "offline"
+            bolinha = "○"
+
+        else:
+
+            classe_status = "offline"
+            bolinha = "○"
+
+        ativo = (
+            " ativo"
+            if camera["id"]
+            == inicial["id"]
+            else ""
+        )
+
+        botoes.append(
+            f"""
+            <button
+                type="button"
+                class="vv-botao-camera {classe_status}{ativo}"
+                data-camera-id="{esc(camera['id'])}"
+                data-video="{esc(camera.get('video_id') or '')}"
+                data-status="{esc(status)}"
+                data-nome="{esc(camera['nome'])}"
+                data-titulo="{esc(camera['titulo'])}"
+                data-descricao="{esc(camera['descricao'])}"
+                data-pagina="{esc(camera['pagina'])}"
+                onclick="selecionarCameraValeVivo(this)"
+            >
+                <span class="vv-botao-status">
+                    {bolinha}
+                </span>
+
+                <span>
+                    {esc(camera["nome"])}
+                </span>
+            </button>
+            """
+        )
+
+    status_inicial = inicial.get(
+        "status",
+        "indisponivel",
+    )
+
+    video_inicial = inicial.get(
+        "video_id"
+    )
+
+    disponivel_inicial = (
+        bool(video_inicial)
+        and status_inicial
+        in (
+            "ao_vivo",
+            "disponivel",
+        )
+    )
+
+    if status_inicial == "ao_vivo":
+
+        texto_status = (
+            "TRANSMISSÃO DISPONÍVEL"
+        )
+
+        classe_status = "online"
+
+    elif status_inicial == "disponivel":
+
+        texto_status = (
+            "PLAYER DISPONÍVEL"
+        )
+
+        classe_status = "online"
+
+    elif status_inicial == "desconectada":
+
+        texto_status = (
+            "CÂMERA DESCONECTADA"
+        )
+
+        classe_status = "offline"
+
+    else:
+
+        texto_status = (
+            "TRANSMISSÃO INDISPONÍVEL"
+        )
+
+        classe_status = "offline"
+
+    if disponivel_inicial:
+
+        src_inicial = (
+            "https://www.youtube.com/embed/"
+            + esc(video_inicial)
+            + "?autoplay=1&mute=1&rel=0"
+        )
+
+        iframe_src = (
+            f'src="{src_inicial}"'
+        )
+
+        mensagem_display = "none"
+
+    else:
+
+        iframe_src = ""
+        mensagem_display = "flex"
+
+    html_base = f"""
+    <div class="vv-monitor">
+
+        <div class="vv-intro">
+
+            <div>
+
+                <div class="vv-titulo">
+                    MONITORAMENTO VISUAL DO RIO TAQUARI
+                </div>
+
+                <div class="vv-subtitulo">
+                    Câmeras públicas do Vale Vivo 24h,
+                    organizadas no sentido do percurso do rio.
+                </div>
+
+            </div>
+
+            <div
+                id="vv-status-geral"
+                class="vv-status {classe_status}"
+            >
+                <span>●</span>
+                <span id="vv-status-texto">
+                    {texto_status}
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="vv-navegacao">
+
+            {''.join(botoes)}
+
+        </div>
+
+
+        <div class="vv-player-card">
+
+            <div class="vv-player-topo">
+
+                <div>
+
+                    <div
+                        id="vv-camera-nome"
+                        class="vv-local"
+                    >
+                        {esc(inicial["nome"])}
+                    </div>
+
+                    <div
+                        id="vv-camera-titulo"
+                        class="vv-local-titulo"
+                    >
+                        {esc(inicial["titulo"])}
+                    </div>
+
+                    <div
+                        id="vv-camera-descricao"
+                        class="vv-local-descricao"
+                    >
+                        {esc(inicial["descricao"])}
+                    </div>
+
+                </div>
+
+                <div class="vv-fonte">
+                    Fonte: Vale Vivo 24h
+                </div>
+
+            </div>
+
+
+            <div class="vv-video-wrap">
+
+                <iframe
+                    id="vv-camera-frame"
+                    {iframe_src}
+                    title="Câmera Vale Vivo"
+                    allow="
+                        accelerometer;
+                        autoplay;
+                        clipboard-write;
+                        encrypted-media;
+                        gyroscope;
+                        picture-in-picture;
+                        web-share
+                    "
+                    referrerpolicy="
+                        strict-origin-when-cross-origin
+                    "
+                    allowfullscreen
+                ></iframe>
+
+                <div
+                    id="vv-camera-indisponivel"
+                    class="vv-indisponivel"
+                    style="display:{mensagem_display};"
+                >
+                    <div>
+
+                        <strong>
+                            Transmissão temporariamente
+                            indisponível
+                        </strong>
+
+                        <span>
+                            A fonte pública não está transmitindo
+                            este ponto neste momento.
+                        </span>
+
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="vv-rodape">
+
+                <div>
+                    A imagem é fornecida por uma câmera pública
+                    externa. A disponibilidade depende do
+                    serviço Vale Vivo.
+                </div>
+
+                <a
+                    id="vv-link-fonte"
+                    href="{esc(inicial['pagina'])}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    ABRIR NA FONTE
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+    """
+
+    javascript = """
+    <script>
+    function selecionarCameraValeVivo(botao) {
+
+        var botoes = document.querySelectorAll(
+            ".vv-botao-camera"
+        );
+
+        botoes.forEach(function(item) {
+            item.classList.remove("ativo");
+        });
+
+        botao.classList.add("ativo");
+
+        var video = (
+            botao.getAttribute("data-video")
+            || ""
+        );
+
+        var status = (
+            botao.getAttribute("data-status")
+            || "indisponivel"
+        );
+
+        var nome = (
+            botao.getAttribute("data-nome")
+            || ""
+        );
+
+        var titulo = (
+            botao.getAttribute("data-titulo")
+            || ""
+        );
+
+        var descricao = (
+            botao.getAttribute("data-descricao")
+            || ""
+        );
+
+        var pagina = (
+            botao.getAttribute("data-pagina")
+            || "#"
+        );
+
+        var frame = document.getElementById(
+            "vv-camera-frame"
+        );
+
+        var indisponivel = document.getElementById(
+            "vv-camera-indisponivel"
+        );
+
+        var statusGeral = document.getElementById(
+            "vv-status-geral"
+        );
+
+        var statusTexto = document.getElementById(
+            "vv-status-texto"
+        );
+
+        document.getElementById(
+            "vv-camera-nome"
+        ).textContent = nome;
+
+        document.getElementById(
+            "vv-camera-titulo"
+        ).textContent = titulo;
+
+        document.getElementById(
+            "vv-camera-descricao"
+        ).textContent = descricao;
+
+        document.getElementById(
+            "vv-link-fonte"
+        ).href = pagina;
+
+        statusGeral.classList.remove(
+            "online",
+            "offline"
+        );
+
+        var podeExibir = (
+            video
+            && (
+                status === "ao_vivo"
+                || status === "disponivel"
+            )
+        );
+
+        if (podeExibir) {
+
+            statusGeral.classList.add(
+                "online"
+            );
+
+            if (status === "ao_vivo") {
+                statusTexto.textContent =
+                    "TRANSMISSÃO DISPONÍVEL";
+            } else {
+                statusTexto.textContent =
+                    "PLAYER DISPONÍVEL";
+            }
+
+            indisponivel.style.display =
+                "none";
+
+            var novaUrl =
+                "https://www.youtube.com/embed/"
+                + video
+                + "?autoplay=1&mute=1&rel=0";
+
+            if (
+                frame.getAttribute("src")
+                !== novaUrl
+            ) {
+                frame.setAttribute(
+                    "src",
+                    novaUrl
+                );
+            }
+
+        } else {
+
+            statusGeral.classList.add(
+                "offline"
+            );
+
+            if (
+                status
+                === "desconectada"
+            ) {
+                statusTexto.textContent =
+                    "CÂMERA DESCONECTADA";
+            } else {
+                statusTexto.textContent =
+                    "TRANSMISSÃO INDISPONÍVEL";
+            }
+
+            frame.removeAttribute(
+                "src"
+            );
+
+            indisponivel.style.display =
+                "flex";
+        }
+    }
+    </script>
+    """
+
+    return (
+        html_base
+        + javascript
+    )
+
+
 def gerar_comparativo_satelite_html(
     imagens,
 ):
@@ -2482,6 +2961,28 @@ def gerar_dashboard(
         )
     )
 
+    try:
+
+        cameras_vale_vivo = (
+            coletar_cameras_vale_vivo()
+        )
+
+    except Exception as exc:
+
+        print(
+            "[CAMERAS] Falha Vale Vivo:",
+            exc,
+            flush=True,
+        )
+
+        cameras_vale_vivo = []
+
+    monitoramento_visual_html = (
+        gerar_monitoramento_visual_html(
+            cameras_vale_vivo
+        )
+    )
+
     html = f"""
 <!DOCTYPE html>
 
@@ -2735,6 +3236,313 @@ strong {{
 .painel-aba.ativa {{
     display: block;
 }}
+
+.vv-monitor {{
+    display: grid;
+    gap: 16px;
+}}
+
+.vv-intro {{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+
+    padding: 16px 18px;
+
+    border: 1px solid #25343d;
+    border-radius: 11px;
+
+    background: #11191e;
+}}
+
+.vv-titulo {{
+    color: #e8eef1;
+
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .35px;
+}}
+
+.vv-subtitulo {{
+    margin-top: 5px;
+
+    color: #82939d;
+
+    font-size: 11px;
+    line-height: 1.45;
+}}
+
+.vv-status {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    flex-shrink: 0;
+
+    padding: 6px 10px;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .35px;
+}}
+
+.vv-status.online {{
+    color: #b7dbc4;
+    background: #12241a;
+    border: 1px solid #294b35;
+}}
+
+.vv-status.offline {{
+    color: #d7a4a4;
+    background: #2b1717;
+    border: 1px solid #573030;
+}}
+
+.vv-navegacao {{
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            5,
+            minmax(0,1fr)
+        );
+
+    gap: 8px;
+}}
+
+.vv-botao-camera {{
+    min-height: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    padding: 9px 10px;
+
+    color: #93a3ac;
+    background: #11191e;
+
+    border: 1px solid #26343c;
+    border-radius: 8px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        color .15s ease;
+}}
+
+.vv-botao-camera:hover {{
+    color: #dbe5e9;
+    border-color: #40525d;
+}}
+
+.vv-botao-camera.ativo {{
+    color: #d9ede0;
+
+    background: #16231a;
+    border-color: #3b6548;
+}}
+
+.vv-botao-camera.online
+.vv-botao-status,
+.vv-botao-camera.disponivel
+.vv-botao-status {{
+    color: #66c886;
+}}
+
+.vv-botao-camera.offline
+.vv-botao-status {{
+    color: #b96f6f;
+}}
+
+.vv-player-card {{
+    overflow: hidden;
+
+    border: 1px solid #25343d;
+    border-radius: 12px;
+
+    background: #10181d;
+}}
+
+.vv-player-topo {{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+
+    padding: 15px 17px;
+}}
+
+.vv-local {{
+    color: #84a98e;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .55px;
+    text-transform: uppercase;
+}}
+
+.vv-local-titulo {{
+    margin-top: 3px;
+
+    color: #edf2f4;
+
+    font-size: 17px;
+    font-weight: 800;
+}}
+
+.vv-local-descricao {{
+    margin-top: 4px;
+
+    color: #8999a2;
+
+    font-size: 11px;
+}}
+
+.vv-fonte {{
+    color: #6f8089;
+
+    font-size: 10px;
+
+    white-space: nowrap;
+}}
+
+.vv-video-wrap {{
+    position: relative;
+
+    width: 100%;
+    aspect-ratio: 16 / 9;
+
+    background: #05090b;
+}}
+
+.vv-video-wrap iframe {{
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+}}
+
+.vv-indisponivel {{
+    position: absolute;
+    inset: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 25px;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #182229,
+            #080d10 70%
+        );
+}}
+
+.vv-indisponivel div {{
+    display: grid;
+    gap: 7px;
+}}
+
+.vv-indisponivel strong {{
+    color: #d7a4a4;
+
+    font-size: 14px;
+}}
+
+.vv-indisponivel span {{
+    color: #7e8f98;
+
+    font-size: 11px;
+}}
+
+.vv-rodape {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+
+    padding: 11px 16px;
+
+    color: #71818a;
+
+    font-size: 10px;
+    line-height: 1.4;
+}}
+
+.vv-rodape a {{
+    flex-shrink: 0;
+
+    padding: 6px 9px;
+
+    border: 1px solid #33434c;
+    border-radius: 6px;
+
+    color: #a8bac3;
+
+    text-decoration: none;
+
+    font-size: 9px;
+    font-weight: 800;
+}}
+
+.vv-rodape a:hover {{
+    color: #e8eef1;
+    border-color: #566b77;
+}}
+
+.vv-sem-dados {{
+    padding: 40px;
+
+    border: 1px solid #26343c;
+    border-radius: 10px;
+
+    color: #82929b;
+    background: #0d1418;
+
+    text-align: center;
+}}
+
+@media(max-width:900px) {{
+
+    .vv-intro {{
+        flex-direction: column;
+    }}
+
+    .vv-navegacao {{
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0,1fr)
+            );
+    }}
+
+    .vv-player-topo {{
+        flex-direction: column;
+    }}
+
+    .vv-rodape {{
+        flex-direction: column;
+        align-items: flex-start;
+    }}
+
+}}
+
 
 .comparativo-lista {{
     display: grid;
@@ -3537,30 +4345,9 @@ ainda será calibrada com dados observados.
     class="painel-aba"
 >
 
-    <div class="painel-placeholder">
+    <div class="secao">
 
-        <div class="painel-placeholder-conteudo">
-
-            <div class="painel-placeholder-icone">
-                ◎
-            </div>
-
-            <div class="painel-placeholder-titulo">
-                Monitoramento Visual
-            </div>
-
-            <div class="painel-placeholder-texto">
-                Espaço preparado para reunir imagens de
-                satélite e, futuramente, câmeras ou webcams
-                disponíveis em Santa Tereza, Barra Mansa e
-                nas cabeceiras.
-            </div>
-
-            <div class="painel-placeholder-etapa">
-                FASE 3 · SATÉLITE + CÂMERAS
-            </div>
-
-        </div>
+        {monitoramento_visual_html}
 
     </div>
 
