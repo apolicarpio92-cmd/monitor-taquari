@@ -1698,6 +1698,312 @@ def gerar_barragens_html(barragens):
 # DASHBOARD
 # ============================================================
 
+def gerar_comparativo_satelite_html(
+    imagens,
+):
+
+    ordem = [
+        "Cabeceiras / Vacaria",
+        "Barra Mansa",
+        "Santa Tereza",
+    ]
+
+    blocos = []
+
+    for nome in ordem:
+
+        atual = imagens.get(
+            nome,
+            {},
+        )
+
+        if not atual.get("ok"):
+
+            blocos.append(
+                f"""
+                <div class="card comparativo-card">
+
+                    <div class="titulo">
+                        {nome.upper()}
+                    </div>
+
+                    <div class="comparativo-sem-dados">
+                        Dados de satélite indisponíveis.
+                    </div>
+
+                </div>
+                """
+            )
+
+            continue
+
+        anterior = atual.get(
+            "anterior"
+        )
+
+        if not anterior:
+
+            blocos.append(
+                f"""
+                <div class="card comparativo-card">
+
+                    <div class="titulo">
+                        {nome.upper()}
+                    </div>
+
+                    <div class="comparativo-sem-dados">
+                        Não foi encontrada uma cena anterior
+                        adequada para comparação.
+                    </div>
+
+                </div>
+                """
+            )
+
+            continue
+
+        data_atual = atual.get(
+            "data"
+        )
+
+        data_anterior = anterior.get(
+            "data"
+        )
+
+        data_atual_txt = (
+            data_atual.astimezone().strftime(
+                "%d/%m/%Y %H:%M"
+            )
+            if data_atual
+            else "-"
+        )
+
+        data_anterior_txt = (
+            data_anterior.astimezone().strftime(
+                "%d/%m/%Y %H:%M"
+            )
+            if data_anterior
+            else "-"
+        )
+
+        nuvens_atual = atual.get(
+            "nuvens"
+        )
+
+        nuvens_anterior = anterior.get(
+            "nuvens"
+        )
+
+        nuvens_atual_txt = (
+            f"{nuvens_atual:.1f}%"
+            if nuvens_atual is not None
+            else "-"
+        )
+
+        nuvens_anterior_txt = (
+            f"{nuvens_anterior:.1f}%"
+            if nuvens_anterior is not None
+            else "-"
+        )
+
+        thumb_atual = atual.get(
+            "thumbnail"
+        )
+
+        thumb_anterior = anterior.get(
+            "thumbnail"
+        )
+
+        sat_atual = atual.get(
+            "satellite",
+            "Sentinel-2",
+        )
+
+        sat_anterior = anterior.get(
+            "satellite",
+            "Sentinel-2",
+        )
+
+        imagem_atual_html = (
+            f"""
+            <img
+                src="{thumb_atual}"
+                class="comparativo-img"
+                alt="Cena atual de {nome}"
+                loading="lazy"
+            >
+            """
+            if thumb_atual
+            else """
+            <div class="comparativo-img-vazia">
+                Imagem indisponível
+            </div>
+            """
+        )
+
+        imagem_anterior_html = (
+            f"""
+            <img
+                src="{thumb_anterior}"
+                class="comparativo-img"
+                alt="Cena anterior de {nome}"
+                loading="lazy"
+            >
+            """
+            if thumb_anterior
+            else """
+            <div class="comparativo-img-vazia">
+                Imagem indisponível
+            </div>
+            """
+        )
+
+        intervalo_txt = "-"
+
+        if (
+            data_atual
+            and data_anterior
+        ):
+
+            intervalo = (
+                data_atual
+                - data_anterior
+            )
+
+            dias = (
+                intervalo.days
+            )
+
+            if dias == 0:
+                intervalo_txt = "< 1 dia"
+
+            elif dias == 1:
+                intervalo_txt = "1 dia"
+
+            else:
+                intervalo_txt = (
+                    f"{dias} dias"
+                )
+
+        blocos.append(
+            f"""
+            <div class="card comparativo-card">
+
+                <div class="comparativo-topo">
+
+                    <div class="titulo">
+                        {nome.upper()}
+                    </div>
+
+                    <div class="comparativo-intervalo">
+                        INTERVALO · {intervalo_txt}
+                    </div>
+
+                </div>
+
+                <div class="comparativo-dupla">
+
+                    <div class="comparativo-cena">
+
+                        <div class="comparativo-rotulo anterior">
+                            ANTERIOR
+                        </div>
+
+                        <div class="comparativo-imagem-wrap">
+                            {imagem_anterior_html}
+                        </div>
+
+                        <div class="comparativo-meta">
+
+                            <div>
+                                <span>Data</span>
+                                <strong>
+                                    {data_anterior_txt}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Nuvens</span>
+                                <strong>
+                                    {nuvens_anterior_txt}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Satélite</span>
+                                <strong>
+                                    {sat_anterior}
+                                </strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="comparativo-cena">
+
+                        <div class="comparativo-rotulo atual">
+                            MAIS RECENTE
+                        </div>
+
+                        <div class="comparativo-imagem-wrap">
+                            {imagem_atual_html}
+                        </div>
+
+                        <div class="comparativo-meta">
+
+                            <div>
+                                <span>Data</span>
+                                <strong>
+                                    {data_atual_txt}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Nuvens</span>
+                                <strong>
+                                    {nuvens_atual_txt}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Satélite</span>
+                                <strong>
+                                    {sat_atual}
+                                </strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="comparativo-aviso">
+                    Comparação visual entre duas cenas reais.
+                    Diferenças aparentes também podem resultar
+                    de iluminação, nuvens, vegetação e condições
+                    atmosféricas.
+                </div>
+
+            </div>
+            """
+        )
+
+    return (
+        """
+        <div class="comparativo-lista">
+        """
+        + "".join(
+            blocos
+        )
+        + """
+        </div>
+        """
+    )
+
+
 def gerar_imagens_satelite_html(
     imagens,
 ):
@@ -2170,6 +2476,12 @@ def gerar_dashboard(
         )
     )
 
+    comparativo_satelite_html = (
+        gerar_comparativo_satelite_html(
+            imagens_satelite
+        )
+    )
+
     html = f"""
 <!DOCTYPE html>
 
@@ -2423,6 +2735,190 @@ strong {{
 .painel-aba.ativa {{
     display: block;
 }}
+
+.comparativo-lista {{
+    display: grid;
+    gap: 20px;
+}}
+
+.comparativo-card {{
+    overflow: hidden;
+}}
+
+.comparativo-topo {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}}
+
+.comparativo-intervalo {{
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background: #10191e;
+    border: 1px solid #30404a;
+
+    color: #91a3ad;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .35px;
+}}
+
+.comparativo-dupla {{
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0,1fr)
+        );
+
+    gap: 14px;
+
+    margin-top: 16px;
+}}
+
+.comparativo-cena {{
+    min-width: 0;
+
+    padding: 12px;
+
+    border-radius: 11px;
+
+    background: #0d1418;
+
+    border: 1px solid #26343c;
+}}
+
+.comparativo-rotulo {{
+    display: inline-flex;
+
+    margin-bottom: 10px;
+    padding: 5px 8px;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .35px;
+}}
+
+.comparativo-rotulo.anterior {{
+    color: #aab7be;
+
+    background: #172027;
+
+    border: 1px solid #33434c;
+}}
+
+.comparativo-rotulo.atual {{
+    color: #b6dac3;
+
+    background: #12241a;
+
+    border: 1px solid #294b35;
+}}
+
+.comparativo-imagem-wrap {{
+    height: 360px;
+
+    overflow: hidden;
+
+    border-radius: 9px;
+
+    background: #080d10;
+}}
+
+.comparativo-img {{
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}}
+
+.comparativo-img-vazia {{
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #70808a;
+}}
+
+.comparativo-meta {{
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0,1fr)
+        );
+
+    gap: 7px;
+
+    margin-top: 10px;
+}}
+
+.comparativo-meta div {{
+    padding: 9px;
+
+    border-radius: 7px;
+
+    background: #111a1f;
+}}
+
+.comparativo-meta span {{
+    font-size: 9px;
+}}
+
+.comparativo-meta strong {{
+    font-size: 12px;
+}}
+
+.comparativo-aviso {{
+    margin-top: 13px;
+
+    color: #81919b;
+
+    font-size: 11px;
+    line-height: 1.5;
+}}
+
+.comparativo-sem-dados {{
+    margin-top: 16px;
+
+    padding: 30px;
+
+    border-radius: 9px;
+
+    background: #0d1418;
+
+    color: #82929b;
+}}
+
+@media(max-width:900px) {{
+
+    .comparativo-dupla {{
+        grid-template-columns: 1fr;
+    }}
+
+    .comparativo-imagem-wrap {{
+        height: 300px;
+    }}
+
+    .comparativo-meta {{
+        grid-template-columns: 1fr;
+    }}
+
+}}
+
 
 .sat-grid {{
     display: grid;
@@ -3013,30 +3509,19 @@ ainda será calibrada com dados observados.
     class="painel-aba"
 >
 
-    <div class="painel-placeholder">
+    <div class="secao">
 
-        <div class="painel-placeholder-conteudo">
-
-            <div class="painel-placeholder-icone">
-                ⇆
-            </div>
-
-            <div class="painel-placeholder-titulo">
-                Comparativo de Imagens
-            </div>
-
-            <div class="painel-placeholder-texto">
-                Esta área permitirá comparar a imagem mais
-                recente com cenas anteriores do mesmo ponto,
-                facilitando a análise visual das mudanças no
-                rio e no entorno.
-            </div>
-
-            <div class="painel-placeholder-etapa">
-                FASE 2 · COMPARAÇÃO TEMPORAL
-            </div>
-
+        <div
+            class="titulo"
+            style="
+                margin-bottom:14px;
+                font-size:14px;
+            "
+        >
+            COMPARATIVO DE IMAGENS
         </div>
+
+        {comparativo_satelite_html}
 
     </div>
 

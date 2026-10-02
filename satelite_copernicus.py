@@ -61,7 +61,7 @@ def _converter_data(valor):
 def buscar_cenas(
     lat,
     lon,
-    dias=60,
+    dias=120,
 ):
 
     agora = datetime.now(
@@ -247,6 +247,161 @@ def escolher_cena(
     return None
 
 
+def escolher_cena_anterior(
+    features,
+    cena_atual,
+):
+
+    if (
+        not features
+        or not cena_atual
+        or cena_atual.get("data") is None
+    ):
+
+        return None
+
+    data_atual = cena_atual[
+        "data"
+    ]
+
+    cenas = []
+
+    for feature in features:
+
+        props = feature.get(
+            "properties",
+            {},
+        )
+
+        assets = feature.get(
+            "assets",
+            {},
+        )
+
+        data = _converter_data(
+            props.get(
+                "datetime"
+            )
+        )
+
+        if data is None:
+            continue
+
+        # ----------------------------------------------------
+        # Ignora a propria aquisicao atual.
+        #
+        # Uma mesma passagem pode aparecer em mais de um tile,
+        # portanto exigimos pelo menos 1 hora de diferenca.
+        # ----------------------------------------------------
+
+        if data >= (
+            data_atual
+            - timedelta(hours=1)
+        ):
+            continue
+
+        nuvens = props.get(
+            "eo:cloud_cover"
+        )
+
+        try:
+            nuvens = float(
+                nuvens
+            )
+        except Exception:
+            nuvens = 999.0
+
+        thumbnail = None
+
+        thumb = assets.get(
+            "thumbnail"
+        )
+
+        if isinstance(
+            thumb,
+            dict,
+        ):
+            thumbnail = thumb.get(
+                "href"
+            )
+
+        cenas.append(
+            {
+                "id":
+                    feature.get(
+                        "id",
+                        "",
+                    ),
+
+                "data":
+                    data,
+
+                "nuvens":
+                    nuvens,
+
+                "thumbnail":
+                    thumbnail,
+            }
+        )
+
+    if not cenas:
+        return None
+
+    # --------------------------------------------------------
+    # Mesma regra de qualidade utilizada para a cena atual.
+    # --------------------------------------------------------
+
+    for limite in [
+        20,
+        40,
+        90,
+    ]:
+
+        candidatas = [
+            c
+            for c in cenas
+            if c["nuvens"] <= limite
+        ]
+
+        if not candidatas:
+            continue
+
+        candidatas.sort(
+            key=lambda x:
+                x["data"],
+            reverse=True,
+        )
+
+        escolhida = (
+            candidatas[0]
+        )
+
+        escolhida[
+            "satellite"
+        ] = _satellite_from_id(
+            escolhida["id"]
+        )
+
+        escolhida[
+            "criterio_nuvens"
+        ] = limite
+
+        classificacao = (
+            classificar_cena(
+                escolhida["data"],
+                escolhida["nuvens"],
+            )
+        )
+
+        escolhida.update(
+            classificacao
+        )
+
+        return escolhida
+
+    return None
+
+
 def classificar_cena(
     data,
     nuvens,
@@ -407,6 +562,15 @@ def coletar_imagens_atuais():
                 features
             )
 
+            cena_anterior = (
+                escolher_cena_anterior(
+                    features,
+                    cena,
+                )
+                if cena is not None
+                else None
+            )
+
             if cena is None:
 
                 resultado[nome] = {
@@ -471,6 +635,9 @@ def coletar_imagens_atuais():
                     classificacao[
                         "nuvem_classe"
                     ],
+
+                "anterior":
+                    cena_anterior,
             }
 
         except Exception as e:
