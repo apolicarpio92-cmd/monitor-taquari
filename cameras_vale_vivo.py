@@ -31,8 +31,15 @@ CAMERAS = [
         "id": "13",
         "nome": "Roca Sales",
         "titulo": "Ponte do Rio Taquari",
-        "descricao": "Vista da ponte e do Rio Taquari",
-        "status": "listada_ao_vivo",
+        "descricao": (
+            "Vista do Rio Taquari e da ponte da ERS-129"
+        ),
+        "status": "ao_vivo",
+        "video_id": "3gOSQGMX76M",
+        "pagina": (
+            "https://www.youtube.com/watch"
+            "?v=3gOSQGMX76M"
+        ),
     },
     {
         "id": "17",
