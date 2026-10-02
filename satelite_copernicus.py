@@ -446,6 +446,31 @@ def coletar_imagens_atuais():
                     cena[
                         "criterio_nuvens"
                     ],
+
+                "idade_dias":
+                    classificacao[
+                        "idade_dias"
+                    ],
+
+                "idade_status":
+                    classificacao[
+                        "idade_status"
+                    ],
+
+                "idade_classe":
+                    classificacao[
+                        "idade_classe"
+                    ],
+
+                "nuvem_status":
+                    classificacao[
+                        "nuvem_status"
+                    ],
+
+                "nuvem_classe":
+                    classificacao[
+                        "nuvem_classe"
+                    ],
             }
 
         except Exception as e:
