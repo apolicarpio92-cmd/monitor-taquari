@@ -26,6 +26,10 @@ from barragens_historico_web import (
     atualizar_historico_barragens,
 )
 
+from satelite_copernicus import (
+    coletar_imagens_atuais,
+)
+
 
 # ============================================================
 # CONFIGURACAO
@@ -1694,6 +1698,162 @@ def gerar_barragens_html(barragens):
 # DASHBOARD
 # ============================================================
 
+def gerar_imagens_satelite_html(
+    imagens,
+):
+
+    cards = []
+
+    ordem = [
+        "Cabeceiras / Vacaria",
+        "Barra Mansa",
+        "Santa Tereza",
+    ]
+
+    for nome in ordem:
+
+        d = imagens.get(
+            nome,
+            {},
+        )
+
+        if not d.get("ok"):
+
+            cards.append(
+                f"""
+                <div class="card sat-card">
+
+                    <div class="titulo">
+                        {nome.upper()}
+                    </div>
+
+                    <div class="sat-sem-dados">
+                        Imagem indisponível.
+                    </div>
+
+                </div>
+                """
+            )
+
+            continue
+
+        data = d.get(
+            "data"
+        )
+
+        if data:
+
+            data_txt = data.astimezone().strftime(
+                "%d/%m/%Y %H:%M"
+            )
+
+        else:
+
+            data_txt = "-"
+
+        nuvens = d.get(
+            "nuvens"
+        )
+
+        if nuvens is not None:
+
+            nuvens_txt = (
+                f"{nuvens:.1f}%"
+            )
+
+        else:
+
+            nuvens_txt = "-"
+
+        satelite = d.get(
+            "satellite",
+            "Sentinel-2",
+        )
+
+        thumbnail = d.get(
+            "thumbnail"
+        )
+
+        imagem_html = ""
+
+        if thumbnail:
+
+            imagem_html = f"""
+            <div class="sat-imagem-wrap">
+
+                <img
+                    src="{thumbnail}"
+                    alt="Imagem de satélite de {nome}"
+                    class="sat-imagem"
+                    loading="lazy"
+                >
+
+            </div>
+            """
+
+        else:
+
+            imagem_html = """
+            <div class="sat-imagem-vazia">
+                Prévia indisponível
+            </div>
+            """
+
+        cards.append(
+            f"""
+            <div class="card sat-card">
+
+                <div class="titulo">
+                    {nome.upper()}
+                </div>
+
+                {imagem_html}
+
+                <div class="sat-meta">
+
+                    <div>
+                        <span>Satélite</span>
+                        <strong>
+                            {satelite}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Última cena útil</span>
+                        <strong>
+                            {data_txt}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Nuvens na cena</span>
+                        <strong>
+                            {nuvens_txt}
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="sat-aviso">
+                    Última imagem real de satélite disponível.
+                    Não representa transmissão ao vivo.
+                </div>
+
+            </div>
+            """
+        )
+
+    return (
+        """
+        <div class="sat-grid">
+        """
+        + "".join(cards)
+        + """
+        </div>
+        """
+    )
+
+
 def gerar_dashboard(
     por_estacao,
     modelo,
@@ -1921,6 +2081,22 @@ def gerar_dashboard(
 
     atualizado = datetime.now().strftime(
         "%d/%m/%Y %H:%M:%S"
+    )
+
+    try:
+
+        imagens_satelite = (
+            coletar_imagens_atuais()
+        )
+
+    except Exception:
+
+        imagens_satelite = {}
+
+    imagens_satelite_html = (
+        gerar_imagens_satelite_html(
+            imagens_satelite
+        )
     )
 
     html = f"""
@@ -2176,6 +2352,118 @@ strong {{
 .painel-aba.ativa {{
     display: block;
 }}
+
+.sat-grid {{
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(330px,1fr)
+        );
+
+    gap: 18px;
+}}
+
+.sat-card {{
+    overflow: hidden;
+}}
+
+.sat-imagem-wrap {{
+    margin-top: 16px;
+
+    width: 100%;
+    height: 320px;
+
+    overflow: hidden;
+
+    border-radius: 10px;
+
+    background: #0d1418;
+
+    border: 1px solid #26343c;
+}}
+
+.sat-imagem {{
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+}}
+
+.sat-imagem-vazia {{
+    height: 320px;
+
+    margin-top: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #0d1418;
+
+    border:
+        1px solid
+        #26343c;
+
+    border-radius: 10px;
+
+    color: #73838d;
+}}
+
+.sat-meta {{
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            1fr
+        );
+
+    gap: 8px;
+
+    margin-top: 14px;
+}}
+
+.sat-meta div {{
+    background: #0d1418;
+
+    border-radius: 8px;
+
+    padding: 11px;
+}}
+
+.sat-meta span {{
+    font-size: 10px;
+}}
+
+.sat-meta strong {{
+    font-size: 13px;
+}}
+
+.sat-aviso {{
+    margin-top: 12px;
+
+    color: #82929c;
+
+    font-size: 11px;
+    line-height: 1.4;
+}}
+
+.sat-sem-dados {{
+    margin-top: 16px;
+
+    padding: 30px;
+
+    background: #0d1418;
+
+    border-radius: 8px;
+
+    color: #8a9aa4;
+}}
+
 
 .painel-placeholder {{
     min-height: 390px;
@@ -2572,29 +2860,19 @@ ainda será calibrada com dados observados.
     class="painel-aba"
 >
 
-    <div class="painel-placeholder">
+    <div class="secao">
 
-        <div class="painel-placeholder-conteudo">
-
-            <div class="painel-placeholder-icone">
-                ◉
-            </div>
-
-            <div class="painel-placeholder-titulo">
-                Imagens Atuais
-            </div>
-
-            <div class="painel-placeholder-texto">
-                Aqui serão exibidas as últimas imagens reais
-                de satélite disponíveis para Cabeceiras /
-                Vacaria, Barra Mansa e Santa Tereza.
-            </div>
-
-            <div class="painel-placeholder-etapa">
-                PRÓXIMA ETAPA · SENTINEL-2 / SENTINEL-1
-            </div>
-
+        <div
+            class="titulo"
+            style="
+                margin-bottom:14px;
+                font-size:14px;
+            "
+        >
+            IMAGENS ATUAIS — ÚLTIMA CENA ÚTIL
         </div>
+
+        {imagens_satelite_html}
 
     </div>
 
