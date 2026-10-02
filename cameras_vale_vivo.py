@@ -15,16 +15,15 @@ CAMERAS = [
     {
         "id": "3",
         "nome": "Encantado / Muçum",
-        "titulo": "Ponte da ERS-129",
+        "titulo": "Belvedere de Encantado",
         "descricao": (
-            "Vista entre Encantado e Muçum"
+            "Vista para o Rio Taquari e Muçum"
         ),
         "status": "ao_vivo",
-        "video_id": "ocb4Nti4a0k",
+        "video_id": "1VWYrG9Celc",
         "pagina": (
-            "https://valevivo.app/"
-            "camera-ao-vivo/"
-            "camera-teste-lajeado-encantado/"
+            "https://www.youtube.com/watch"
+            "?v=1VWYrG9Celc"
         ),
     },
     {
