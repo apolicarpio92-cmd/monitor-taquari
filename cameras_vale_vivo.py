@@ -4,7 +4,8 @@ CAMERAS = [
         "nome": "Santa Tereza",
         "titulo": "Início do Rio Taquari",
         "descricao": "Encontro dos rios Antas e Carreiro",
-        "status": "listada_ao_vivo",
+        "status": "ao_vivo",
+        "video_id": "lO27uwIzIKE",
     },
     {
         "id": "20",
@@ -54,7 +55,8 @@ def coletar_cameras_vale_vivo(
             camera
         )
 
-        item["video_id"] = None
+        if "video_id" not in item:
+            item["video_id"] = None
 
         item["pagina"] = (
             CENTRAL_URL
