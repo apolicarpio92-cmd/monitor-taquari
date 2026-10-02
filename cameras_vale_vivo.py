@@ -2,7 +2,10 @@ import html
 import re
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    as_completed,
+)
 
 import requests
 
@@ -16,13 +19,20 @@ TIMEOUT = (4, 8)
 CACHE_SEGUNDOS = 300
 
 
+# ============================================================
+# ULTIMOS PLAYERS CONHECIDOS
+#
+# Sao fallback.
+#
+# Se a consulta ao Vale Vivo funcionar e encontrar outro
+# player, o ID novo tem prioridade automaticamente.
+# ============================================================
+
 CAMERAS = [
     {
         "id": "18",
         "nome": "Santa Tereza",
-        "titulo": (
-            "Início do Rio Taquari"
-        ),
+        "titulo": "Início do Rio Taquari",
         "descricao": (
             "Encontro dos rios Antas e Carreiro"
         ),
@@ -32,7 +42,10 @@ CAMERAS = [
             "18-inicio-do-rio-taquari-"
             "no-encontro-do-carreiro-e-antas/"
         ),
+        "video_fallback": "kn1qx5Sin20",
+        "status_fallback": "ao_vivo",
     },
+
     {
         "id": "20",
         "nome": "Encantado / Muçum",
@@ -48,15 +61,16 @@ CAMERAS = [
             "20-belvedere-de-encantado-"
             "para-o-rio-taquari-e-mucum/"
         ),
+        "video_fallback": "XXp1Ezu1Dbs",
+        "status_fallback": "desconectada",
     },
+
     {
         "id": "13",
         "nome": "Roca Sales",
-        "titulo": (
-            "Ponte do Rio Taquari"
-        ),
+        "titulo": "Ponte do Rio Taquari",
         "descricao": (
-            "Vista do Rio Taquari e da ponte em Roca Sales"
+            "Vista da ponte e do Rio Taquari"
         ),
         "pagina": (
             "https://valevivo.app/"
@@ -64,13 +78,14 @@ CAMERAS = [
             "13-vista-de-arroio-do-meio-"
             "lajeado-estrela-e-teutonia/"
         ),
+        "video_fallback": "ddJVi6hsPys",
+        "status_fallback": "ao_vivo",
     },
+
     {
         "id": "17",
         "nome": "Colinas",
-        "titulo": (
-            "Rio Taquari em Colinas"
-        ),
+        "titulo": "Rio Taquari em Colinas",
         "descricao": (
             "Vista da ERS-129 e do Rio Taquari"
         ),
@@ -80,7 +95,10 @@ CAMERAS = [
             "17-colinas-vista-a-ers-129-"
             "e-ao-rio-taquari/"
         ),
+        "video_fallback": "bjvL6vHche0",
+        "status_fallback": "ao_vivo",
     },
+
     {
         "id": "5",
         "nome": "Cruzeiro / Estrela",
@@ -88,7 +106,7 @@ CAMERAS = [
             "Rio Taquari em Cruzeiro do Sul"
         ),
         "descricao": (
-            "Vista da Casa do Morro para o Rio Taquari e Estrela"
+            "Vista para o Rio Taquari e Estrela"
         ),
         "pagina": (
             "https://valevivo.app/"
@@ -97,6 +115,8 @@ CAMERAS = [
             "para-o-rio-taquari-e-estrela-"
             "camera-em-cruzeiro-do-sul/"
         ),
+        "video_fallback": "c7l0qMFBGHs",
+        "status_fallback": "ao_vivo",
     },
 ]
 
@@ -104,12 +124,20 @@ CAMERAS = [
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 "
-        "(Monitor Taquari; "
-        "+https://monitor-taquari.onrender.com)"
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "Chrome/154 Safari/537.36"
     ),
+
     "Accept": (
-        "text/html,application/xhtml+xml,"
-        "application/xml;q=0.9,*/*;q=0.8"
+        "text/html,"
+        "application/xhtml+xml,"
+        "application/xml;q=0.9,"
+        "*/*;q=0.8"
+    ),
+
+    "Accept-Language": (
+        "pt-BR,pt;q=0.9,en;q=0.8"
     ),
 }
 
@@ -121,6 +149,10 @@ _CACHE = {
     "dados": None,
 }
 
+
+# ============================================================
+# DOWNLOAD
+# ============================================================
 
 def _baixar_html(url):
 
@@ -135,7 +167,13 @@ def _baixar_html(url):
     return resposta.text
 
 
-def _texto_limpo(conteudo):
+# ============================================================
+# LIMPA HTML
+# ============================================================
+
+def _texto_limpo(
+    conteudo,
+):
 
     if not conteudo:
         return ""
@@ -179,48 +217,9 @@ def _texto_limpo(conteudo):
     return texto.strip()
 
 
-def _status_camera(
-    html_lista,
-    numero,
-):
-
-    texto = _texto_limpo(
-        html_lista
-    )
-
-    if not texto:
-        return None
-
-    padrao = (
-        r"(ao\s+vivo|desconectada)"
-        r"\s*#\s*"
-        + re.escape(
-            str(numero)
-        )
-        + r"\b"
-    )
-
-    achado = re.search(
-        padrao,
-        texto,
-        flags=re.IGNORECASE,
-    )
-
-    if not achado:
-        return None
-
-    valor = (
-        achado
-        .group(1)
-        .lower()
-        .strip()
-    )
-
-    if "desconectada" in valor:
-        return "desconectada"
-
-    return "ao_vivo"
-
+# ============================================================
+# EXTRAI YOUTUBE
+# ============================================================
 
 def _extrair_video_id(
     conteudo,
@@ -234,19 +233,17 @@ def _extrair_video_id(
     )
 
     padroes = [
-        (
-            r"(?:youtube\.com|youtube-nocookie\.com)"
-            r"/embed/"
-            r"([A-Za-z0-9_-]{6,})"
-        ),
-        (
-            r"youtu\.be/"
-            r"([A-Za-z0-9_-]{6,})"
-        ),
-        (
-            r"youtube\.com/watch\?v="
-            r"([A-Za-z0-9_-]{6,})"
-        ),
+        r"(?:www\.)?youtube\.com/embed/"
+        r"([A-Za-z0-9_-]{11})",
+
+        r"(?:www\.)?youtube-nocookie\.com/embed/"
+        r"([A-Za-z0-9_-]{11})",
+
+        r"(?:www\.)?youtube\.com/watch\?v="
+        r"([A-Za-z0-9_-]{11})",
+
+        r"youtu\.be/"
+        r"([A-Za-z0-9_-]{11})",
     ]
 
     for padrao in padroes:
@@ -264,7 +261,65 @@ def _extrair_video_id(
     return None
 
 
-def _buscar_pagina_camera(
+# ============================================================
+# STATUS DA LISTAGEM
+# ============================================================
+
+def _status_camera(
+    html_lista,
+    numero,
+):
+
+    texto = _texto_limpo(
+        html_lista
+    )
+
+    if not texto:
+        return None
+
+    # Exemplo:
+    # "ao vivo #18 INÍCIO..."
+    #
+    # ou:
+    # "desconectada #20 BELVEDERE..."
+
+    padrao = (
+        r"(ao\s+vivo|desconectada)"
+        r"\s*#\s*"
+        + re.escape(
+            str(numero)
+        )
+        + r"\b"
+    )
+
+    encontrado = re.search(
+        padrao,
+        texto,
+        flags=re.IGNORECASE,
+    )
+
+    if not encontrado:
+        return None
+
+    status = (
+        encontrado
+        .group(1)
+        .lower()
+        .strip()
+    )
+
+    if "desconectada" in status:
+
+        return "desconectada"
+
+    return "ao_vivo"
+
+
+# ============================================================
+# PAGINA INDIVIDUAL
+# ============================================================
+
+def _buscar_camera(
     camera,
 ):
 
@@ -274,7 +329,8 @@ def _buscar_pagina_camera(
 
     resultado.update(
         {
-            "video_id": None,
+            "video_detectado": None,
+            "consulta_ok": False,
             "erro": None,
         }
     )
@@ -286,19 +342,30 @@ def _buscar_pagina_camera(
         )
 
         resultado[
-            "video_id"
+            "consulta_ok"
+        ] = True
+
+        resultado[
+            "video_detectado"
         ] = _extrair_video_id(
             conteudo
         )
 
     except Exception as exc:
 
-        resultado["erro"] = (
-            f"{type(exc).__name__}: {exc}"
+        resultado[
+            "erro"
+        ] = (
+            f"{type(exc).__name__}: "
+            f"{exc}"
         )
 
     return resultado
 
+
+# ============================================================
+# COLETA PRINCIPAL
+# ============================================================
 
 def coletar_cameras_vale_vivo(
     forcar=False,
@@ -308,13 +375,11 @@ def coletar_cameras_vale_vivo(
 
     with _CACHE_LOCK:
 
-        dados_cache = (
-            _CACHE.get(
-                "dados"
-            )
+        cache = _CACHE.get(
+            "dados"
         )
 
-        idade_cache = (
+        idade = (
             agora
             - float(
                 _CACHE.get(
@@ -326,21 +391,20 @@ def coletar_cameras_vale_vivo(
 
         if (
             not forcar
-            and dados_cache is not None
-            and idade_cache
-            < CACHE_SEGUNDOS
+            and cache is not None
+            and idade < CACHE_SEGUNDOS
         ):
 
             return [
                 dict(item)
-                for item
-                in dados_cache
+                for item in cache
             ]
 
     # --------------------------------------------------------
-    # Consulta lista oficial para identificar:
-    # AO VIVO / DESCONECTADA
+    # LISTAGEM OFICIAL
     # --------------------------------------------------------
+
+    html_lista = ""
 
     try:
 
@@ -348,13 +412,17 @@ def coletar_cameras_vale_vivo(
             LISTA_URL
         )
 
-    except Exception:
+    except Exception as exc:
 
-        html_lista = ""
+        print(
+            "[VALE VIVO] "
+            "Falha na listagem oficial:",
+            exc,
+            flush=True,
+        )
 
     # --------------------------------------------------------
-    # As páginas das câmeras são consultadas em paralelo.
-    # Assim uma página lenta não segura todas as demais.
+    # PAGINAS INDIVIDUAIS
     # --------------------------------------------------------
 
     encontrados = {}
@@ -365,7 +433,7 @@ def coletar_cameras_vale_vivo(
 
         futuros = {
             executor.submit(
-                _buscar_pagina_camera,
+                _buscar_camera,
                 camera,
             ):
             camera["id"]
@@ -390,10 +458,9 @@ def coletar_cameras_vale_vivo(
             except Exception as exc:
 
                 base = next(
-                    camera
-                    for camera
-                    in CAMERAS
-                    if camera["id"]
+                    c
+                    for c in CAMERAS
+                    if c["id"]
                     == camera_id
                 )
 
@@ -403,16 +470,19 @@ def coletar_cameras_vale_vivo(
 
                 item.update(
                     {
-                        "video_id": None,
-                        "erro": (
-                            f"{type(exc).__name__}: {exc}"
-                        ),
+                        "video_detectado": None,
+                        "consulta_ok": False,
+                        "erro": str(exc),
                     }
                 )
 
                 encontrados[
                     camera_id
                 ] = item
+
+    # --------------------------------------------------------
+    # DECIDE RESULTADO
+    # --------------------------------------------------------
 
     dados = []
 
@@ -423,6 +493,24 @@ def coletar_cameras_vale_vivo(
             dict(camera),
         )
 
+        video_detectado = (
+            item.get(
+                "video_detectado"
+            )
+        )
+
+        video_fallback = (
+            camera.get(
+                "video_fallback"
+            )
+        )
+
+        # Player detectado sempre ganha.
+        video_id = (
+            video_detectado
+            or video_fallback
+        )
+
         status_oficial = (
             _status_camera(
                 html_lista,
@@ -430,47 +518,27 @@ def coletar_cameras_vale_vivo(
             )
         )
 
-        video_id = item.get(
-            "video_id"
+        status_fallback = (
+            camera.get(
+                "status_fallback",
+                "indisponivel",
+            )
         )
 
-        # ----------------------------------------------------
-        # O status da listagem oficial tem prioridade.
-        #
-        # Se a listagem estiver indisponível, o iframe
-        # encontrado serve como indicação de disponibilidade.
-        # ----------------------------------------------------
-
-        if (
+        # Status oficial ganha quando conseguimos ler.
+        status = (
             status_oficial
-            == "desconectada"
-        ):
+            or status_fallback
+        )
 
-            status = (
-                "desconectada"
-            )
+        # Se não temos vídeo, não podemos exibir.
+        if not video_id:
 
-        elif (
-            status_oficial
-            == "ao_vivo"
-            and video_id
-        ):
+            status = "indisponivel"
 
-            status = (
-                "ao_vivo"
-            )
-
-        elif video_id:
-
-            status = (
-                "disponivel"
-            )
-
-        else:
-
-            status = (
-                "indisponivel"
-            )
+        item[
+            "video_id"
+        ] = video_id
 
         item[
             "status"
@@ -480,9 +548,20 @@ def coletar_cameras_vale_vivo(
             "status_oficial"
         ] = status_oficial
 
+        item[
+            "usando_fallback"
+        ] = (
+            video_detectado is None
+            and video_fallback is not None
+        )
+
         dados.append(
             item
         )
+
+    # --------------------------------------------------------
+    # CACHE
+    # --------------------------------------------------------
 
     with _CACHE_LOCK:
 
@@ -500,6 +579,10 @@ def coletar_cameras_vale_vivo(
 
     return dados
 
+
+# ============================================================
+# TESTE
+# ============================================================
 
 def testar():
 
@@ -533,21 +616,22 @@ def testar():
         )
 
         print(
-            "Status.....:",
+            "Status.........:",
             item.get(
                 "status"
             )
         )
 
         print(
-            "Oficial....:",
+            "Status oficial.:",
             item.get(
                 "status_oficial"
             )
+            or "-"
         )
 
         print(
-            "Video ID...:",
+            "Video ID.......:",
             item.get(
                 "video_id"
             )
@@ -555,12 +639,35 @@ def testar():
         )
 
         print(
-            "Erro.......:",
-            item.get(
-                "erro"
+            "Fallback.......:",
+            (
+                "SIM"
+                if item.get(
+                    "usando_fallback"
+                )
+                else "NAO"
             )
-            or "-"
         )
+
+        print(
+            "Consulta pagina:",
+            (
+                "OK"
+                if item.get(
+                    "consulta_ok"
+                )
+                else "FALHOU"
+            )
+        )
+
+        if item.get(
+            "erro"
+        ):
+
+            print(
+                "Erro...........:",
+                item["erro"]
+            )
 
 
 if __name__ == "__main__":
