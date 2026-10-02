@@ -54,6 +54,22 @@ TIMEOUT = 40
 # Evita uma requisicao ANA prender o ciclo inteiro.
 TIMEOUT_ANA = (5, 12)
 
+# ============================================================
+# ANA LEGADA
+#
+# O webservice legado da ANA apresentou travamentos de rede
+# no ambiente Render mesmo quando executado em thread com
+# timeout rigido.
+#
+# Enquanto a nova API autenticada da ANA nao estiver ativa,
+# a consulta legada fica fora do caminho critico.
+#
+# O monitor utiliza automaticamente o ultimo dado valido
+# existente em telemetria_historico.csv, restaurado do Turso.
+# ============================================================
+
+ANA_LEGADA_ATIVA = False
+
 ETAPA_CICLO = "aguardando"
 ETAPA_CICLO_EM = None
 
@@ -377,18 +393,32 @@ def buscar_ana(
     # ANA - TENTATIVA PRINCIPAL + FALLBACK
     # ========================================================
 
-    urls_ana = [
+    if not ANA_LEGADA_ATIVA:
+
+        log(
+            (
+                f"ANA {nome}: webservice legado "
+                "temporariamente desativado; "
+                "usando ultimo dado valido local."
+            )
+        )
+
+        urls_ana = []
+
+    else:
+
+        urls_ana = [
         (
             ANA_URL,
             "FILTRADO"
         ),
-        (
-            "https://telemetriaws1.ana.gov.br/"
-            "ServiceANA.asmx/"
-            "DadosHidrometeorologicosGerais",
-            "GERAL"
-        ),
-    ]
+            (
+                "https://telemetriaws1.ana.gov.br/"
+                "ServiceANA.asmx/"
+                "DadosHidrometeorologicosGerais",
+                "GERAL"
+            ),
+        ]
 
     resposta = None
     ultimo_erro = None
