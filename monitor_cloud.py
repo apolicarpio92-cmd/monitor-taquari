@@ -2106,6 +2106,154 @@ strong {{
     margin-top: 26px;
 }}
 
+/* ==========================================================
+   NAVEGACAO PRINCIPAL
+   ========================================================== */
+
+.nav-monitor {{
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 18px 28px 0 28px;
+}}
+
+.nav-monitor-inner {{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    padding: 7px;
+
+    background: #10171c;
+    border: 1px solid #29363e;
+    border-radius: 12px;
+}}
+
+.nav-monitor a {{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 38px;
+    padding: 0 16px;
+
+    border-radius: 8px;
+
+    color: #8fa0aa;
+    text-decoration: none;
+
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .35px;
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        border-color .18s ease;
+}}
+
+.nav-monitor a:hover {{
+    color: #e8eef1;
+    background: #182229;
+}}
+
+.nav-monitor a.ativo {{
+    color: #f3f7f8;
+
+    background: #1f2c33;
+
+    box-shadow:
+        inset 0 0 0 1px #3b515d;
+}}
+
+/* ==========================================================
+   CONTEUDO DAS ABAS
+   ========================================================== */
+
+.painel-aba {{
+    display: none;
+}}
+
+.painel-aba.ativa {{
+    display: block;
+}}
+
+.painel-placeholder {{
+    min-height: 390px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}}
+
+.painel-placeholder-conteudo {{
+    width: 100%;
+    max-width: 850px;
+
+    padding: 34px;
+
+    background: #151d23;
+
+    border: 1px solid #29363e;
+    border-radius: 14px;
+
+    text-align: center;
+}}
+
+.painel-placeholder-icone {{
+    width: 52px;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0 auto 18px auto;
+
+    border-radius: 50%;
+
+    background: #0d1418;
+    border: 1px solid #30414b;
+
+    color: #90a8b5;
+    font-size: 24px;
+}}
+
+.painel-placeholder-titulo {{
+    color: #eef3f5;
+
+    font-size: 20px;
+    font-weight: 700;
+}}
+
+.painel-placeholder-texto {{
+    max-width: 650px;
+
+    margin: 12px auto 0 auto;
+
+    color: #8fa0aa;
+
+    font-size: 14px;
+    line-height: 1.6;
+}}
+
+.painel-placeholder-etapa {{
+    display: inline-block;
+
+    margin-top: 18px;
+    padding: 7px 11px;
+
+    border-radius: 999px;
+
+    background: #0d1418;
+    border: 1px solid #29363e;
+
+    color: #8297a3;
+
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}}
+
 .aviso {{
     margin-top: 25px;
     padding: 15px;
@@ -2118,6 +2266,34 @@ strong {{
 
     .metricas {{
         grid-template-columns: 1fr;
+    }}
+
+    .nav-monitor {{
+        padding:
+            14px
+            14px
+            0
+            14px;
+    }}
+
+    .nav-monitor-inner {{
+        display: grid;
+        grid-template-columns:
+            repeat(2,1fr);
+    }}
+
+    .nav-monitor a {{
+        padding:
+            0
+            8px;
+
+        font-size: 10px;
+    }}
+
+    main {{
+        padding:
+            20px
+            14px;
     }}
 
 }}
@@ -2140,7 +2316,51 @@ V3 · atualizado {atualizado}
 
 </header>
 
+<nav
+    class="nav-monitor"
+    id="nav-monitor-taquari"
+    aria-label="Navegação principal do monitor"
+>
+    <div class="nav-monitor-inner">
+
+        <a
+            href="#visao-geral"
+            data-aba="visao-geral"
+            class="ativo"
+        >
+            VISÃO GERAL
+        </a>
+
+        <a
+            href="#imagens-atuais"
+            data-aba="imagens-atuais"
+        >
+            IMAGENS ATUAIS
+        </a>
+
+        <a
+            href="#comparativo"
+            data-aba="comparativo"
+        >
+            COMPARATIVO
+        </a>
+
+        <a
+            href="#monitoramento-visual"
+            data-aba="monitoramento-visual"
+        >
+            MONITORAMENTO VISUAL
+        </a>
+
+    </div>
+</nav>
+
 <main>
+
+<section
+    id="visao-geral"
+    class="painel-aba ativa"
+>
 
 <div class="grid">
 
@@ -2340,7 +2560,246 @@ ainda será calibrada com dados observados.
 
 </div>
 
+</section>
+
+
+<!-- ======================================================
+     IMAGENS ATUAIS
+     ====================================================== -->
+
+<section
+    id="imagens-atuais"
+    class="painel-aba"
+>
+
+    <div class="painel-placeholder">
+
+        <div class="painel-placeholder-conteudo">
+
+            <div class="painel-placeholder-icone">
+                ◉
+            </div>
+
+            <div class="painel-placeholder-titulo">
+                Imagens Atuais
+            </div>
+
+            <div class="painel-placeholder-texto">
+                Aqui serão exibidas as últimas imagens reais
+                de satélite disponíveis para Cabeceiras /
+                Vacaria, Barra Mansa e Santa Tereza.
+            </div>
+
+            <div class="painel-placeholder-etapa">
+                PRÓXIMA ETAPA · SENTINEL-2 / SENTINEL-1
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     COMPARATIVO
+     ====================================================== -->
+
+<section
+    id="comparativo"
+    class="painel-aba"
+>
+
+    <div class="painel-placeholder">
+
+        <div class="painel-placeholder-conteudo">
+
+            <div class="painel-placeholder-icone">
+                ⇆
+            </div>
+
+            <div class="painel-placeholder-titulo">
+                Comparativo de Imagens
+            </div>
+
+            <div class="painel-placeholder-texto">
+                Esta área permitirá comparar a imagem mais
+                recente com cenas anteriores do mesmo ponto,
+                facilitando a análise visual das mudanças no
+                rio e no entorno.
+            </div>
+
+            <div class="painel-placeholder-etapa">
+                FASE 2 · COMPARAÇÃO TEMPORAL
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     MONITORAMENTO VISUAL
+     ====================================================== -->
+
+<section
+    id="monitoramento-visual"
+    class="painel-aba"
+>
+
+    <div class="painel-placeholder">
+
+        <div class="painel-placeholder-conteudo">
+
+            <div class="painel-placeholder-icone">
+                ◎
+            </div>
+
+            <div class="painel-placeholder-titulo">
+                Monitoramento Visual
+            </div>
+
+            <div class="painel-placeholder-texto">
+                Espaço preparado para reunir imagens de
+                satélite e, futuramente, câmeras ou webcams
+                disponíveis em Santa Tereza, Barra Mansa e
+                nas cabeceiras.
+            </div>
+
+            <div class="painel-placeholder-etapa">
+                FASE 3 · SATÉLITE + CÂMERAS
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
 </main>
+
+
+<script>
+(function() {{
+
+    function normalizarAba() {{
+
+        var hash = (
+            window.location.hash
+            || "#visao-geral"
+        );
+
+        var aba = hash.replace(
+            "#",
+            ""
+        );
+
+        var permitidas = [
+            "visao-geral",
+            "imagens-atuais",
+            "comparativo",
+            "monitoramento-visual"
+        ];
+
+        if (
+            permitidas.indexOf(aba)
+            === -1
+        ) {{
+            aba = "visao-geral";
+        }}
+
+        return aba;
+    }}
+
+
+    function ativarAba() {{
+
+        var aba = normalizarAba();
+
+        var paineis = document.querySelectorAll(
+            ".painel-aba"
+        );
+
+        var links = document.querySelectorAll(
+            "#nav-monitor-taquari [data-aba]"
+        );
+
+        paineis.forEach(
+            function(painel) {{
+
+                painel.classList.remove(
+                    "ativa"
+                );
+
+            }}
+        );
+
+        links.forEach(
+            function(link) {{
+
+                link.classList.remove(
+                    "ativo"
+                );
+
+            }}
+        );
+
+        var painelAtivo = document.getElementById(
+            aba
+        );
+
+        var linkAtivo = document.querySelector(
+            '#nav-monitor-taquari [data-aba="'
+            + aba
+            + '"]'
+        );
+
+        if (painelAtivo) {{
+            painelAtivo.classList.add(
+                "ativa"
+            );
+        }}
+
+        if (linkAtivo) {{
+            linkAtivo.classList.add(
+                "ativo"
+            );
+        }}
+
+        window.scrollTo(
+            0,
+            0
+        );
+    }}
+
+
+    window.addEventListener(
+        "hashchange",
+        ativarAba
+    );
+
+
+    if (
+        document.readyState
+        === "loading"
+    ) {{
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            ativarAba
+        );
+
+    }}
+    else {{
+
+        ativarAba();
+
+    }}
+
+}})();
+</script>
 
 </body>
 
