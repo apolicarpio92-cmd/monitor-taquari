@@ -1770,6 +1770,48 @@ def gerar_imagens_satelite_html(
             "Sentinel-2",
         )
 
+        idade_dias = d.get(
+            "idade_dias"
+        )
+
+        idade_status = d.get(
+            "idade_status",
+            "SEM DATA",
+        )
+
+        idade_classe = d.get(
+            "idade_classe",
+            "neutro",
+        )
+
+        nuvem_status = d.get(
+            "nuvem_status",
+            "NUVENS DESCONHECIDAS",
+        )
+
+        nuvem_classe = d.get(
+            "nuvem_classe",
+            "neutro",
+        )
+
+        if idade_dias is None:
+
+            idade_txt = "-"
+
+        elif idade_dias == 0:
+
+            idade_txt = "hoje"
+
+        elif idade_dias == 1:
+
+            idade_txt = "1 dia"
+
+        else:
+
+            idade_txt = (
+                f"{idade_dias} dias"
+            )
+
         thumbnail = d.get(
             "thumbnail"
         )
@@ -1803,8 +1845,28 @@ def gerar_imagens_satelite_html(
             f"""
             <div class="card sat-card">
 
-                <div class="titulo">
-                    {nome.upper()}
+                <div class="sat-cabecalho">
+
+                    <div class="titulo">
+                        {nome.upper()}
+                    </div>
+
+                    <div class="sat-badges">
+
+                        <span
+                            class="sat-badge {idade_classe}"
+                        >
+                            {idade_status}
+                        </span>
+
+                        <span
+                            class="sat-badge {nuvem_classe}"
+                        >
+                            {nuvem_status}
+                        </span>
+
+                    </div>
+
                 </div>
 
                 {imagem_html}
@@ -1832,11 +1894,20 @@ def gerar_imagens_satelite_html(
                         </strong>
                     </div>
 
+                    <div>
+                        <span>Idade da imagem</span>
+                        <strong>
+                            {idade_txt}
+                        </strong>
+                    </div>
+
                 </div>
 
                 <div class="sat-aviso">
-                    Última imagem real de satélite disponível.
-                    Não representa transmissão ao vivo.
+                    Cena selecionada priorizando baixa
+                    nebulosidade e recência.
+                    Imagem real de satélite;
+                    não representa transmissão ao vivo.
                 </div>
 
             </div>
@@ -2369,6 +2440,60 @@ strong {{
     overflow: hidden;
 }}
 
+.sat-cabecalho {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}}
+
+.sat-badges {{
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}}
+
+.sat-badge {{
+    display: inline-flex;
+
+    padding:
+        5px
+        8px;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .35px;
+
+    border: 1px solid transparent;
+}}
+
+.sat-badge.bom {{
+    color: #b7dbc4;
+    background: #12241a;
+    border-color: #294b35;
+}}
+
+.sat-badge.atencao {{
+    color: #e3c98e;
+    background: #292211;
+    border-color: #57451f;
+}}
+
+.sat-badge.antigo {{
+    color: #d7a4a4;
+    background: #2b1717;
+    border-color: #573030;
+}}
+
+.sat-badge.neutro {{
+    color: #9cabb4;
+    background: #131b20;
+    border-color: #2b3941;
+}}
+
 .sat-imagem-wrap {{
     margin-top: 16px;
 
@@ -2418,7 +2543,7 @@ strong {{
 
     grid-template-columns:
         repeat(
-            3,
+            2,
             1fr
         );
 

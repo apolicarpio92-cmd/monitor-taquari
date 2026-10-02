@@ -247,6 +247,147 @@ def escolher_cena(
     return None
 
 
+def classificar_cena(
+    data,
+    nuvens,
+):
+
+    agora = datetime.now(
+        timezone.utc
+    )
+
+    idade_dias = None
+
+    if data is not None:
+
+        try:
+
+            idade_dias = max(
+                0,
+                (
+                    agora
+                    - data.astimezone(
+                        timezone.utc
+                    )
+                ).days,
+            )
+
+        except Exception:
+            idade_dias = None
+
+    # --------------------------------------------------------
+    # IDADE
+    # --------------------------------------------------------
+
+    if idade_dias is None:
+
+        idade_status = (
+            "SEM DATA"
+        )
+
+        idade_classe = (
+            "neutro"
+        )
+
+    elif idade_dias <= 7:
+
+        idade_status = (
+            "RECENTE"
+        )
+
+        idade_classe = (
+            "bom"
+        )
+
+    elif idade_dias <= 14:
+
+        idade_status = (
+            "ATENÇÃO"
+        )
+
+        idade_classe = (
+            "atencao"
+        )
+
+    else:
+
+        idade_status = (
+            "IMAGEM ANTIGA"
+        )
+
+        idade_classe = (
+            "antigo"
+        )
+
+    # --------------------------------------------------------
+    # NUVENS
+    # --------------------------------------------------------
+
+    try:
+        valor_nuvens = float(
+            nuvens
+        )
+    except Exception:
+        valor_nuvens = None
+
+    if valor_nuvens is None:
+
+        nuvem_status = (
+            "NUVENS DESCONHECIDAS"
+        )
+
+        nuvem_classe = (
+            "neutro"
+        )
+
+    elif valor_nuvens <= 10:
+
+        nuvem_status = (
+            "BAIXA NUVEM"
+        )
+
+        nuvem_classe = (
+            "bom"
+        )
+
+    elif valor_nuvens <= 30:
+
+        nuvem_status = (
+            "NUVEM MODERADA"
+        )
+
+        nuvem_classe = (
+            "atencao"
+        )
+
+    else:
+
+        nuvem_status = (
+            "MUITA NUVEM"
+        )
+
+        nuvem_classe = (
+            "antigo"
+        )
+
+    return {
+        "idade_dias":
+            idade_dias,
+
+        "idade_status":
+            idade_status,
+
+        "idade_classe":
+            idade_classe,
+
+        "nuvem_status":
+            nuvem_status,
+
+        "nuvem_classe":
+            nuvem_classe,
+    }
+
+
 def coletar_imagens_atuais():
 
     resultado = {}
@@ -275,6 +416,13 @@ def coletar_imagens_atuais():
                 }
 
                 continue
+
+            classificacao = (
+                classificar_cena(
+                    cena["data"],
+                    cena["nuvens"],
+                )
+            )
 
             resultado[nome] = {
                 "ok": True,
