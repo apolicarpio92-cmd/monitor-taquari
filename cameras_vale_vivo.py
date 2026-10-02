@@ -2,6 +2,11 @@ CAMERAS = [
     {
         "id": "18",
         "nome": "Santa Tereza",
+        "youtube_url": (
+            "https://www.youtube.com/watch"
+            "?v=lO27uwIzIKE"
+            "&source_ve_path=MTc4NDI0"
+        ),
         "titulo": "Início do Rio Taquari",
         "descricao": "Encontro dos rios Antas e Carreiro",
         "status": "ao_vivo",

@@ -1604,6 +1604,25 @@ def gerar_barragens_html(barragens):
             else "-"
         )
 
+        link_camera = (
+            camera.get(
+                "youtube_url"
+            )
+            or CENTRAL
+        )
+
+        tem_youtube = bool(
+            camera.get(
+                "youtube_url"
+            )
+        )
+
+        texto_botao = (
+            "ABRIR CÂMERA NO YOUTUBE"
+            if tem_youtube
+            else "ABRIR CENTRAL DE CÂMERAS"
+        )
+
         cards.append(
             f"""
             <div class="card">
@@ -1813,19 +1832,19 @@ def gerar_monitoramento_visual_html(
                     </div>
 
                     <div class="vv-central-texto">
-                        O player não é incorporado diretamente
-                        porque o endereço da transmissão pode
-                        mudar. Use a central oficial para abrir
-                        a imagem atual.
+                        Para este ponto, o sistema abre a
+                        transmissão diretamente na fonte disponível.
+                        Quando não houver link direto confirmado,
+                        será utilizada a central oficial do Vale Vivo.
                     </div>
 
                     <a
                         class="vv-abrir-central"
-                        href="{CENTRAL}"
+                        href="{esc(link_camera)}"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        ABRIR CENTRAL DE CÂMERAS
+                        {texto_botao}
                     </a>
 
                 </div>
