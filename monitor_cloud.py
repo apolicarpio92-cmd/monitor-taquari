@@ -1705,14 +1705,9 @@ def gerar_monitoramento_visual_html(
 
     import html as _html
 
-    if not cameras:
-
-        return """
-        <div class="vv-sem-dados">
-            Não foi possível consultar as câmeras
-            neste momento.
-        </div>
-        """
+    CENTRAL = (
+        "https://valevivo.app/cameras-ao-vivo/"
+    )
 
     def esc(valor):
 
@@ -1725,64 +1720,26 @@ def gerar_monitoramento_visual_html(
             quote=True,
         )
 
-    # --------------------------------------------------------
-    # Escolhe a primeira transmissão disponível.
-    # Normalmente será Santa Tereza.
-    # --------------------------------------------------------
+    if not cameras:
 
-    inicial = None
-
-    for camera in cameras:
-
-        if (
-            camera.get("video_id")
-            and camera.get("status")
-            in (
-                "ao_vivo",
-                "disponivel",
-            )
-        ):
-
-            inicial = camera
-            break
-
-    if inicial is None:
-
-        inicial = cameras[0]
+        return """
+        <div class="vv-sem-dados">
+            Não foi possível carregar os pontos
+            de monitoramento visual.
+        </div>
+        """
 
     botoes = []
 
-    for camera in cameras:
+    cards = []
 
-        status = camera.get(
-            "status",
-            "indisponivel",
-        )
-
-        if status == "ao_vivo":
-
-            classe_status = "online"
-            bolinha = "●"
-
-        elif status == "disponivel":
-
-            classe_status = "disponivel"
-            bolinha = "●"
-
-        elif status == "desconectada":
-
-            classe_status = "offline"
-            bolinha = "○"
-
-        else:
-
-            classe_status = "offline"
-            bolinha = "○"
+    for indice, camera in enumerate(
+        cameras
+    ):
 
         ativo = (
             " ativo"
-            if camera["id"]
-            == inicial["id"]
+            if indice == 0
             else ""
         )
 
@@ -1790,18 +1747,12 @@ def gerar_monitoramento_visual_html(
             f"""
             <button
                 type="button"
-                class="vv-botao-camera {classe_status}{ativo}"
-                data-camera-id="{esc(camera['id'])}"
-                data-video="{esc(camera.get('video_id') or '')}"
-                data-status="{esc(status)}"
-                data-nome="{esc(camera['nome'])}"
-                data-titulo="{esc(camera['titulo'])}"
-                data-descricao="{esc(camera['descricao'])}"
-                data-pagina="{esc(camera['pagina'])}"
+                class="vv-botao-camera{ativo}"
+                data-vv-alvo="vv-camera-{esc(camera['id'])}"
                 onclick="selecionarCameraValeVivo(this)"
             >
                 <span class="vv-botao-status">
-                    {bolinha}
+                    ●
                 </span>
 
                 <span>
@@ -1811,76 +1762,93 @@ def gerar_monitoramento_visual_html(
             """
         )
 
-    status_inicial = inicial.get(
-        "status",
-        "indisponivel",
-    )
-
-    video_inicial = inicial.get(
-        "video_id"
-    )
-
-    disponivel_inicial = (
-        bool(video_inicial)
-        and status_inicial
-        in (
-            "ao_vivo",
-            "disponivel",
-        )
-    )
-
-    if status_inicial == "ao_vivo":
-
-        texto_status = (
-            "TRANSMISSÃO DISPONÍVEL"
+        display = (
+            "block"
+            if indice == 0
+            else "none"
         )
 
-        classe_status = "online"
+        cards.append(
+            f"""
+            <div
+                id="vv-camera-{esc(camera['id'])}"
+                class="vv-camera-painel"
+                style="display:{display};"
+            >
 
-    elif status_inicial == "disponivel":
+                <div class="vv-player-topo">
 
-        texto_status = (
-            "PLAYER DISPONÍVEL"
+                    <div>
+
+                        <div class="vv-local">
+                            {esc(camera["nome"])}
+                        </div>
+
+                        <div class="vv-local-titulo">
+                            {esc(camera["titulo"])}
+                        </div>
+
+                        <div class="vv-local-descricao">
+                            {esc(camera["descricao"])}
+                        </div>
+
+                    </div>
+
+                    <div class="vv-status fonte">
+                        ● LISTADA COMO AO VIVO
+                    </div>
+
+                </div>
+
+
+                <div class="vv-central-box">
+
+                    <div class="vv-central-icone">
+                        ◉
+                    </div>
+
+                    <div class="vv-central-titulo">
+                        Câmera pública disponível
+                        na central do Vale Vivo
+                    </div>
+
+                    <div class="vv-central-texto">
+                        O player não é incorporado diretamente
+                        porque o endereço da transmissão pode
+                        mudar. Use a central oficial para abrir
+                        a imagem atual.
+                    </div>
+
+                    <a
+                        class="vv-abrir-central"
+                        href="{CENTRAL}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        ABRIR CENTRAL DE CÂMERAS
+                    </a>
+
+                </div>
+
+
+                <div class="vv-rodape">
+
+                    <div>
+                        Fonte pública externa:
+                        Vale Vivo 24h.
+                    </div>
+
+                    <div>
+                        Ponto #{esc(camera["id"])}
+                    </div>
+
+                </div>
+
+            </div>
+            """
         )
 
-        classe_status = "online"
-
-    elif status_inicial == "desconectada":
-
-        texto_status = (
-            "CÂMERA DESCONECTADA"
-        )
-
-        classe_status = "offline"
-
-    else:
-
-        texto_status = (
-            "TRANSMISSÃO INDISPONÍVEL"
-        )
-
-        classe_status = "offline"
-
-    if disponivel_inicial:
-
-        src_inicial = (
-            "https://www.youtube.com/embed/"
-            + esc(video_inicial)
-            + "?autoplay=1&mute=1&rel=0"
-        )
-
-        iframe_src = (
-            f'src="{src_inicial}"'
-        )
-
-        mensagem_display = "none"
-
-    else:
-
-        iframe_src = ""
-        mensagem_display = "flex"
-
-    html_base = f"""
+    return f"""
     <div class="vv-monitor">
 
         <div class="vv-intro">
@@ -1892,289 +1860,84 @@ def gerar_monitoramento_visual_html(
                 </div>
 
                 <div class="vv-subtitulo">
-                    Câmeras públicas do Vale Vivo 24h,
-                    organizadas no sentido do percurso do rio.
+                    Pontos públicos do Vale Vivo organizados
+                    ao longo do percurso do Rio Taquari.
                 </div>
 
             </div>
 
-            <div
-                id="vv-status-geral"
-                class="vv-status {classe_status}"
-            >
-                <span>●</span>
-                <span id="vv-status-texto">
-                    {texto_status}
-                </span>
+            <div class="vv-status fonte">
+                ● FONTE PÚBLICA DISPONÍVEL
             </div>
 
         </div>
 
 
         <div class="vv-navegacao">
-
             {''.join(botoes)}
-
         </div>
 
 
         <div class="vv-player-card">
-
-            <div class="vv-player-topo">
-
-                <div>
-
-                    <div
-                        id="vv-camera-nome"
-                        class="vv-local"
-                    >
-                        {esc(inicial["nome"])}
-                    </div>
-
-                    <div
-                        id="vv-camera-titulo"
-                        class="vv-local-titulo"
-                    >
-                        {esc(inicial["titulo"])}
-                    </div>
-
-                    <div
-                        id="vv-camera-descricao"
-                        class="vv-local-descricao"
-                    >
-                        {esc(inicial["descricao"])}
-                    </div>
-
-                </div>
-
-                <div class="vv-fonte">
-                    Fonte: Vale Vivo 24h
-                </div>
-
-            </div>
-
-
-            <div class="vv-video-wrap">
-
-                <iframe
-                    id="vv-camera-frame"
-                    {iframe_src}
-                    title="Câmera Vale Vivo"
-                    allow="
-                        accelerometer;
-                        autoplay;
-                        clipboard-write;
-                        encrypted-media;
-                        gyroscope;
-                        picture-in-picture;
-                        web-share
-                    "
-                    referrerpolicy="
-                        strict-origin-when-cross-origin
-                    "
-                    allowfullscreen
-                ></iframe>
-
-                <div
-                    id="vv-camera-indisponivel"
-                    class="vv-indisponivel"
-                    style="display:{mensagem_display};"
-                >
-                    <div>
-
-                        <strong>
-                            Transmissão temporariamente
-                            indisponível
-                        </strong>
-
-                        <span>
-                            A fonte pública não está transmitindo
-                            este ponto neste momento.
-                        </span>
-
-                    </div>
-                </div>
-
-            </div>
-
-
-            <div class="vv-rodape">
-
-                <div>
-                    A imagem é fornecida por uma câmera pública
-                    externa. A disponibilidade depende do
-                    serviço Vale Vivo.
-                </div>
-
-                <a
-                    id="vv-link-fonte"
-                    href="{esc(inicial['pagina'])}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    ABRIR NA FONTE
-                </a>
-
-            </div>
-
+            {''.join(cards)}
         </div>
 
     </div>
-    """
 
-    javascript = """
+
     <script>
-    function selecionarCameraValeVivo(botao) {
+
+    function selecionarCameraValeVivo(botao) {{
 
         var botoes = document.querySelectorAll(
             ".vv-botao-camera"
         );
 
-        botoes.forEach(function(item) {
-            item.classList.remove("ativo");
-        });
+        botoes.forEach(
+            function(item) {{
 
-        botao.classList.add("ativo");
-
-        var video = (
-            botao.getAttribute("data-video")
-            || ""
-        );
-
-        var status = (
-            botao.getAttribute("data-status")
-            || "indisponivel"
-        );
-
-        var nome = (
-            botao.getAttribute("data-nome")
-            || ""
-        );
-
-        var titulo = (
-            botao.getAttribute("data-titulo")
-            || ""
-        );
-
-        var descricao = (
-            botao.getAttribute("data-descricao")
-            || ""
-        );
-
-        var pagina = (
-            botao.getAttribute("data-pagina")
-            || "#"
-        );
-
-        var frame = document.getElementById(
-            "vv-camera-frame"
-        );
-
-        var indisponivel = document.getElementById(
-            "vv-camera-indisponivel"
-        );
-
-        var statusGeral = document.getElementById(
-            "vv-status-geral"
-        );
-
-        var statusTexto = document.getElementById(
-            "vv-status-texto"
-        );
-
-        document.getElementById(
-            "vv-camera-nome"
-        ).textContent = nome;
-
-        document.getElementById(
-            "vv-camera-titulo"
-        ).textContent = titulo;
-
-        document.getElementById(
-            "vv-camera-descricao"
-        ).textContent = descricao;
-
-        document.getElementById(
-            "vv-link-fonte"
-        ).href = pagina;
-
-        statusGeral.classList.remove(
-            "online",
-            "offline"
-        );
-
-        var podeExibir = (
-            video
-            && (
-                status === "ao_vivo"
-                || status === "disponivel"
-            )
-        );
-
-        if (podeExibir) {
-
-            statusGeral.classList.add(
-                "online"
-            );
-
-            if (status === "ao_vivo") {
-                statusTexto.textContent =
-                    "TRANSMISSÃO DISPONÍVEL";
-            } else {
-                statusTexto.textContent =
-                    "PLAYER DISPONÍVEL";
-            }
-
-            indisponivel.style.display =
-                "none";
-
-            var novaUrl =
-                "https://www.youtube.com/embed/"
-                + video
-                + "?autoplay=1&mute=1&rel=0";
-
-            if (
-                frame.getAttribute("src")
-                !== novaUrl
-            ) {
-                frame.setAttribute(
-                    "src",
-                    novaUrl
+                item.classList.remove(
+                    "ativo"
                 );
-            }
 
-        } else {
+            }}
+        );
 
-            statusGeral.classList.add(
-                "offline"
-            );
+        botao.classList.add(
+            "ativo"
+        );
 
-            if (
-                status
-                === "desconectada"
-            ) {
-                statusTexto.textContent =
-                    "CÂMERA DESCONECTADA";
-            } else {
-                statusTexto.textContent =
-                    "TRANSMISSÃO INDISPONÍVEL";
-            }
+        var paineis = document.querySelectorAll(
+            ".vv-camera-painel"
+        );
 
-            frame.removeAttribute(
-                "src"
-            );
+        paineis.forEach(
+            function(painel) {{
 
-            indisponivel.style.display =
-                "flex";
-        }
-    }
+                painel.style.display =
+                    "none";
+
+            }}
+        );
+
+        var alvo = botao.getAttribute(
+            "data-vv-alvo"
+        );
+
+        var painel = document.getElementById(
+            alvo
+        );
+
+        if (painel) {{
+
+            painel.style.display =
+                "block";
+
+        }}
+    }}
+
     </script>
     """
-
-    return (
-        html_base
-        + javascript
-    )
 
 
 def gerar_comparativo_satelite_html(
@@ -3363,6 +3126,86 @@ strong {{
 .vv-botao-status {{
     color: #b96f6f;
 }}
+
+.vv-central-box {{
+    min-height: 420px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 12px;
+
+    padding: 40px;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #152029,
+            #080d10 70%
+        );
+}}
+
+.vv-central-icone {{
+    font-size: 40px;
+    color: #6fa982;
+}}
+
+.vv-central-titulo {{
+    color: #edf2f4;
+
+    font-size: 18px;
+    font-weight: 800;
+}}
+
+.vv-central-texto {{
+    max-width: 560px;
+
+    color: #84959e;
+
+    font-size: 12px;
+    line-height: 1.6;
+}}
+
+.vv-abrir-central {{
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 8px;
+
+    padding: 11px 16px;
+
+    border-radius: 8px;
+
+    border: 1px solid #3b6548;
+
+    background: #15251b;
+
+    color: #c9e4d2;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .35px;
+
+    text-decoration: none;
+}}
+
+.vv-abrir-central:hover {{
+    background: #1b3022;
+    border-color: #507f5d;
+}}
+
+.vv-status.fonte {{
+    color: #b7dbc4;
+    background: #12241a;
+    border: 1px solid #294b35;
+}}
+
 
 .vv-player-card {{
     overflow: hidden;
