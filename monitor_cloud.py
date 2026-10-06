@@ -2710,6 +2710,1191 @@ def gerar_imagens_satelite_html(
     )
 
 
+
+def gerar_analise_hidrologica_html(
+    por_estacao,
+    modelo,
+    meteo,
+    barragens,
+):
+
+    def ultima_leitura(nome):
+
+        dados = por_estacao.get(
+            nome,
+            []
+        )
+
+        if not dados:
+            return None
+
+        return dados[-1]
+
+
+    def velocidade_60(nome):
+
+        dados = por_estacao.get(
+            nome,
+            []
+        )
+
+        if not dados:
+            return None
+
+        try:
+
+            return velocidade_janela(
+                dados,
+                60
+            )
+
+        except Exception:
+
+            return None
+
+
+    def classificar_tendencia(valor):
+
+        if valor is None:
+
+            return (
+                "SEM DADOS",
+                "neutro",
+                "Não foi possível calcular a tendência."
+            )
+
+        if valor >= 0.10:
+
+            return (
+                "SUBIDA FORTE",
+                "perigo",
+                "O nível apresenta elevação significativa."
+            )
+
+        if valor >= 0.03:
+
+            return (
+                "SUBINDO",
+                "atencao",
+                "O nível apresenta tendência de elevação."
+            )
+
+        if valor <= -0.10:
+
+            return (
+                "QUEDA FORTE",
+                "queda",
+                "O nível apresenta redução significativa."
+            )
+
+        if valor <= -0.03:
+
+            return (
+                "BAIXANDO",
+                "queda",
+                "O nível apresenta tendência de redução."
+            )
+
+        return (
+            "ESTÁVEL",
+            "estavel",
+            "O nível apresenta pouca variação no momento."
+        )
+
+
+    def nivel_texto(leitura):
+
+        if not leitura:
+            return "-"
+
+        valor = leitura.get(
+            "nivel_m"
+        )
+
+        if valor is None:
+            return "-"
+
+        try:
+            return f"{float(valor):.2f} m"
+        except Exception:
+            return str(valor)
+
+
+    def data_texto(leitura):
+
+        if not leitura:
+            return "-"
+
+        valor = leitura.get(
+            "data_hora"
+        )
+
+        if valor is None:
+            return "-"
+
+        try:
+
+            return valor.strftime(
+                "%d/%m/%Y %H:%M"
+            )
+
+        except Exception:
+
+            return str(valor)
+
+
+    def velocidade_texto(valor):
+
+        if valor is None:
+            return "-"
+
+        try:
+
+            sinal = (
+                "+"
+                if valor > 0
+                else ""
+            )
+
+            return (
+                f"{sinal}{valor:.3f} m/h"
+            )
+
+        except Exception:
+
+            return str(valor)
+
+
+    def chuva_periodo(
+        local,
+        horas,
+    ):
+
+        dados_local = meteo.get(
+            local,
+            {}
+        )
+
+        chuva = dados_local.get(
+            "chuva",
+            {}
+        )
+
+        valor = chuva.get(
+            horas
+        )
+
+        if valor is None:
+            return None
+
+        try:
+            return float(valor)
+        except Exception:
+            return None
+
+
+    def chuva_texto(valor):
+
+        if valor is None:
+            return "-"
+
+        return f"{valor:.1f} mm"
+
+
+    # ========================================================
+    # ESTACOES
+    # ========================================================
+
+    santa = ultima_leitura(
+        "Santa Tereza"
+    )
+
+    jose = ultima_leitura(
+        "Linha Jose Julio"
+    )
+
+    v_santa = velocidade_60(
+        "Santa Tereza"
+    )
+
+    v_jose = velocidade_60(
+        "Linha Jose Julio"
+    )
+
+
+    (
+        st_status,
+        st_classe,
+        st_frase,
+    ) = classificar_tendencia(
+        v_santa
+    )
+
+    (
+        jj_status,
+        jj_classe,
+        jj_frase,
+    ) = classificar_tendencia(
+        v_jose
+    )
+
+
+    # ========================================================
+    # CHUVA
+    # ========================================================
+
+    chuva_cab_1 = chuva_periodo(
+        "Cabeceiras",
+        1
+    )
+
+    chuva_cab_3 = chuva_periodo(
+        "Cabeceiras",
+        3
+    )
+
+    chuva_cab_6 = chuva_periodo(
+        "Cabeceiras",
+        6
+    )
+
+    chuva_sta_1 = chuva_periodo(
+        "Santa Tereza",
+        1
+    )
+
+    chuva_sta_3 = chuva_periodo(
+        "Santa Tereza",
+        3
+    )
+
+    chuva_sta_6 = chuva_periodo(
+        "Santa Tereza",
+        6
+    )
+
+
+    # ========================================================
+    # CENARIO GERAL
+    # ========================================================
+
+    velocidades_validas = [
+        v
+        for v in [
+            v_santa,
+            v_jose,
+        ]
+        if v is not None
+    ]
+
+    maior_subida = (
+        max(
+            velocidades_validas
+        )
+        if velocidades_validas
+        else None
+    )
+
+    ambos_subindo = (
+        v_santa is not None
+        and v_jose is not None
+        and v_santa >= 0.03
+        and v_jose >= 0.03
+    )
+
+    chuva_cab_relevante = (
+        (
+            chuva_cab_6 is not None
+            and chuva_cab_6 >= 20
+        )
+        or
+        (
+            chuva_cab_3 is not None
+            and chuva_cab_3 >= 15
+        )
+    )
+
+
+    if (
+        maior_subida is not None
+        and maior_subida >= 0.10
+    ):
+
+        situacao = "ATENÇÃO"
+
+        situacao_classe = "perigo"
+
+        conclusao = (
+            "Há elevação significativa em pelo menos "
+            "um ponto monitorado. O comportamento deve "
+            "ser acompanhado com maior atenção."
+        )
+
+
+    elif ambos_subindo:
+
+        situacao = "ELEVAÇÃO"
+
+        situacao_classe = "atencao"
+
+        conclusao = (
+            "Os pontos monitorados apresentam tendência "
+            "de elevação. É importante acompanhar a "
+            "continuidade da subida."
+        )
+
+
+    elif chuva_cab_relevante:
+
+        situacao = "OBSERVAÇÃO"
+
+        situacao_classe = "atencao"
+
+        conclusao = (
+            "Há previsão de chuva relevante nas "
+            "cabeceiras. Mesmo sem forte elevação "
+            "local neste momento, o cenário merece "
+            "acompanhamento."
+        )
+
+
+    elif velocidades_validas:
+
+        if all(
+            abs(v) < 0.03
+            for v in velocidades_validas
+        ):
+
+            situacao = "ESTÁVEL"
+
+            situacao_classe = "estavel"
+
+            conclusao = (
+                "Os pontos monitorados apresentam "
+                "pouca variação no momento."
+            )
+
+
+        elif all(
+            v <= -0.03
+            for v in velocidades_validas
+        ):
+
+            situacao = "RECUO"
+
+            situacao_classe = "queda"
+
+            conclusao = (
+                "Os níveis monitorados apresentam "
+                "tendência de redução."
+            )
+
+
+        else:
+
+            situacao = "ACOMPANHAMENTO"
+
+            situacao_classe = "neutro"
+
+            conclusao = (
+                "Os pontos apresentam comportamentos "
+                "diferentes. O cenário deve continuar "
+                "sendo acompanhado."
+            )
+
+
+    else:
+
+        situacao = "DADOS INSUFICIENTES"
+
+        situacao_classe = "neutro"
+
+        conclusao = (
+            "Ainda não há dados suficientes para uma "
+            "interpretação automática confiável."
+        )
+
+
+    # ========================================================
+    # LEITURA DO RIO
+    # ========================================================
+
+    if ambos_subindo:
+
+        leitura_rio = (
+            "Há sinal de elevação simultânea nos pontos "
+            "monitorados. Isso reforça a necessidade de "
+            "acompanhar a evolução do sistema no sentido "
+            "de jusante."
+        )
+
+
+    elif (
+        v_santa is not None
+        and v_santa >= 0.03
+        and (
+            v_jose is None
+            or v_jose < 0.03
+        )
+    ):
+
+        leitura_rio = (
+            "Santa Tereza apresenta elevação enquanto "
+            "o outro ponto ainda não mostra o mesmo "
+            "comportamento. O movimento deve continuar "
+            "sendo acompanhado."
+        )
+
+
+    elif chuva_cab_relevante:
+
+        leitura_rio = (
+            "A previsão de chuva nas cabeceiras do "
+            "sistema do Rio das Antas merece atenção "
+            "antes mesmo de uma resposta mais clara "
+            "no Rio Taquari."
+        )
+
+
+    else:
+
+        leitura_rio = (
+            "Não há, neste momento, um sinal automático "
+            "forte de propagação de elevação entre os "
+            "pontos disponíveis."
+        )
+
+
+    # ========================================================
+    # BARRAGENS
+    # ========================================================
+
+    barragens_lista = []
+
+    lista_barragens = (
+        barragens
+        if isinstance(
+            barragens,
+            list
+        )
+        else []
+    )
+
+
+    for barragem in lista_barragens:
+
+        nome = barragem.get(
+            "nome",
+            "Barragem"
+        )
+
+        sai = barragem.get(
+            "sai"
+        )
+
+        seta_b = barragem.get(
+            "seta",
+            "="
+        )
+
+
+        if sai is None:
+
+            vazao = (
+                "sem dado de vazão"
+            )
+
+        else:
+
+            try:
+
+                vazao = (
+                    f"{float(sai):,.0f} m³/s"
+                    .replace(
+                        ",",
+                        "."
+                    )
+                )
+
+            except Exception:
+
+                vazao = (
+                    f"{sai} m³/s"
+                )
+
+
+        if seta_b in (
+            "↑",
+            "⬆",
+        ):
+
+            tendencia_b = (
+                "aumentando"
+            )
+
+        elif seta_b in (
+            "↓",
+            "⬇",
+        ):
+
+            tendencia_b = (
+                "reduzindo"
+            )
+
+        else:
+
+            tendencia_b = (
+                "estável / sem tendência definida"
+            )
+
+
+        barragens_lista.append(
+            f'''
+            <div class="analise-linha">
+
+                <span>
+                    {nome}
+                </span>
+
+                <strong>
+                    {vazao}
+                </strong>
+
+                <small>
+                    {tendencia_b}
+                </small>
+
+            </div>
+            '''
+        )
+
+
+    if barragens_lista:
+
+        barragens_html = "".join(
+            barragens_lista
+        )
+
+    else:
+
+        barragens_html = '''
+        <div class="analise-sem-dados">
+            Dados de barragens indisponíveis
+            para esta análise.
+        </div>
+        '''
+
+
+    # ========================================================
+    # HTML
+    # ========================================================
+
+    return f'''
+    <style>
+
+    .analise-cabecalho {{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:20px;
+        margin-bottom:18px;
+    }}
+
+    .analise-cabecalho h2 {{
+        margin:0 0 6px 0;
+        font-size:18px;
+        color:#e8f1f5;
+    }}
+
+    .analise-cabecalho p {{
+        margin:0;
+        color:#8da0aa;
+        line-height:1.5;
+        max-width:850px;
+        font-size:12px;
+    }}
+
+    .analise-status {{
+        padding:8px 13px;
+        border-radius:999px;
+        font-size:11px;
+        font-weight:900;
+        white-space:nowrap;
+    }}
+
+    .analise-status.estavel {{
+        color:#a8e3bb;
+        background:#10251a;
+        border:1px solid #2c5a3a;
+    }}
+
+    .analise-status.atencao {{
+        color:#ffd66b;
+        background:#2a210d;
+        border:1px solid #66531c;
+    }}
+
+    .analise-status.perigo {{
+        color:#ffaaa3;
+        background:#2b1514;
+        border:1px solid #6f302c;
+    }}
+
+    .analise-status.queda {{
+        color:#a9cee8;
+        background:#10202a;
+        border:1px solid #284b61;
+    }}
+
+    .analise-status.neutro {{
+        color:#bcc8ce;
+        background:#172027;
+        border:1px solid #34434b;
+    }}
+
+    .analise-grid {{
+        display:grid;
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0,1fr)
+            );
+        gap:14px;
+        margin-bottom:14px;
+    }}
+
+    .analise-card {{
+        background:#111a1f;
+        border:1px solid #293840;
+        border-radius:12px;
+        padding:17px;
+    }}
+
+    .analise-card.full {{
+        grid-column:1 / -1;
+    }}
+
+    .analise-titulo {{
+        font-size:11px;
+        font-weight:900;
+        letter-spacing:.4px;
+        color:#91b6cc;
+        margin-bottom:13px;
+    }}
+
+    .analise-estacao-topo {{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:12px;
+    }}
+
+    .analise-nivel {{
+        font-size:27px;
+        font-weight:900;
+        color:#f0f5f7;
+    }}
+
+    .analise-meta {{
+        display:grid;
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0,1fr)
+            );
+        gap:8px;
+        margin-top:12px;
+    }}
+
+    .analise-meta > div {{
+        background:#0c1317;
+        border-radius:8px;
+        padding:10px;
+    }}
+
+    .analise-meta span {{
+        display:block;
+        color:#758790;
+        font-size:9px;
+        margin-bottom:4px;
+    }}
+
+    .analise-meta strong {{
+        font-size:12px;
+        color:#e0e9ed;
+    }}
+
+    .analise-frase {{
+        margin-top:12px;
+        padding-top:11px;
+        border-top:1px solid #26343b;
+        color:#a4b2b9;
+        font-size:11px;
+        line-height:1.5;
+    }}
+
+    .analise-chuva-grid {{
+        display:grid;
+        grid-template-columns:
+            repeat(
+                3,
+                minmax(0,1fr)
+            );
+        gap:7px;
+        margin-top:8px;
+    }}
+
+    .analise-chuva-grid div {{
+        background:#0c1317;
+        padding:10px;
+        border-radius:8px;
+    }}
+
+    .analise-chuva-grid span {{
+        display:block;
+        color:#758790;
+        font-size:9px;
+        margin-bottom:4px;
+    }}
+
+    .analise-chuva-grid strong {{
+        color:#e3edf1;
+        font-size:13px;
+    }}
+
+    .analise-conclusao {{
+        font-size:14px;
+        line-height:1.65;
+        color:#d5e0e5;
+    }}
+
+    .analise-percurso {{
+        margin-top:15px;
+        padding:13px;
+        border-radius:9px;
+        background:#0c1317;
+        color:#8fa0aa;
+        font-size:11px;
+        line-height:1.6;
+    }}
+
+    .analise-percurso strong {{
+        color:#c9d7dd;
+    }}
+
+    .analise-linha {{
+        display:grid;
+        grid-template-columns:
+            1.4fr .8fr 1fr;
+        gap:10px;
+        align-items:center;
+        padding:9px 0;
+        border-bottom:
+            1px solid #243138;
+        font-size:11px;
+    }}
+
+    .analise-linha:last-child {{
+        border-bottom:none;
+    }}
+
+    .analise-linha span {{
+        color:#cbd6db;
+    }}
+
+    .analise-linha strong {{
+        color:#edf3f5;
+    }}
+
+    .analise-linha small {{
+        color:#84949c;
+    }}
+
+    .analise-aviso {{
+        margin-top:15px;
+        padding:12px 14px;
+        border-radius:9px;
+        background:#171a13;
+        border:1px solid #373a23;
+        color:#aeb3a0;
+        font-size:10px;
+        line-height:1.5;
+    }}
+
+    .analise-sem-dados {{
+        color:#82939b;
+        font-size:11px;
+    }}
+
+    @media(max-width:900px) {{
+
+        .analise-grid {{
+            grid-template-columns:1fr;
+        }}
+
+        .analise-card.full {{
+            grid-column:auto;
+        }}
+
+        .analise-cabecalho {{
+            flex-direction:column;
+        }}
+
+        .analise-meta,
+        .analise-chuva-grid {{
+            grid-template-columns:1fr;
+        }}
+
+        .analise-linha {{
+            grid-template-columns:1fr;
+        }}
+
+    }}
+
+    </style>
+
+
+    <div class="analise-cabecalho">
+
+        <div>
+
+            <h2>
+                ANÁLISE HIDROLÓGICA AUTOMÁTICA
+            </h2>
+
+            <p>
+                Interpretação dos dados disponíveis
+                no monitor, combinando nível,
+                tendência, previsão de chuva nas
+                cabeceiras e comportamento das
+                barragens.
+            </p>
+
+        </div>
+
+        <div class="analise-status {situacao_classe}">
+            {situacao}
+        </div>
+
+    </div>
+
+
+    <div class="analise-grid">
+
+
+        <div class="analise-card">
+
+            <div class="analise-titulo">
+                SANTA TEREZA
+            </div>
+
+            <div class="analise-estacao-topo">
+
+                <div class="analise-nivel">
+                    {nivel_texto(santa)}
+                </div>
+
+                <div class="analise-status {st_classe}">
+                    {st_status}
+                </div>
+
+            </div>
+
+            <div class="analise-meta">
+
+                <div>
+
+                    <span>
+                        VARIAÇÃO EM 60 MIN
+                    </span>
+
+                    <strong>
+                        {velocidade_texto(v_santa)}
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        ÚLTIMA LEITURA
+                    </span>
+
+                    <strong>
+                        {data_texto(santa)}
+                    </strong>
+
+                </div>
+
+            </div>
+
+            <div class="analise-frase">
+                {st_frase}
+            </div>
+
+        </div>
+
+
+        <div class="analise-card">
+
+            <div class="analise-titulo">
+                LINHA JOSÉ JÚLIO
+            </div>
+
+            <div class="analise-estacao-topo">
+
+                <div class="analise-nivel">
+                    {nivel_texto(jose)}
+                </div>
+
+                <div class="analise-status {jj_classe}">
+                    {jj_status}
+                </div>
+
+            </div>
+
+            <div class="analise-meta">
+
+                <div>
+
+                    <span>
+                        VARIAÇÃO EM 60 MIN
+                    </span>
+
+                    <strong>
+                        {velocidade_texto(v_jose)}
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        ÚLTIMA LEITURA
+                    </span>
+
+                    <strong>
+                        {data_texto(jose)}
+                    </strong>
+
+                </div>
+
+            </div>
+
+            <div class="analise-frase">
+                {jj_frase}
+            </div>
+
+        </div>
+
+
+        <div class="analise-card">
+
+            <div class="analise-titulo">
+                PREVISÃO DE CHUVA —
+                CABECEIRAS DO RIO DAS ANTAS
+            </div>
+
+            <div class="analise-chuva-grid">
+
+                <div>
+
+                    <span>
+                        PRÓXIMA 1H
+                    </span>
+
+                    <strong>
+                        {chuva_texto(chuva_cab_1)}
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        PRÓXIMAS 3H
+                    </span>
+
+                    <strong>
+                        {chuva_texto(chuva_cab_3)}
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        PRÓXIMAS 6H
+                    </span>
+
+                    <strong>
+                        {chuva_texto(chuva_cab_6)}
+                    </strong>
+
+                </div>
+
+            </div>
+
+            <div class="analise-frase">
+
+                Cabeceiras do sistema na região dos
+                Campos de Cima da Serra. Nesta parte
+                da bacia, o curso principal é o
+                Rio das Antas.
+
+            </div>
+
+        </div>
+
+
+        <div class="analise-card">
+
+            <div class="analise-titulo">
+                PREVISÃO DE CHUVA —
+                SANTA TEREZA
+            </div>
+
+            <div class="analise-chuva-grid">
+
+                <div>
+
+                    <span>
+                        PRÓXIMA 1H
+                    </span>
+
+                    <strong>
+                        {chuva_texto(chuva_sta_1)}
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        PRÓXIMAS 3H
+                    </span>
+
+                    <strong>
+                        {chuva_texto(chuva_sta_3)}
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        PRÓXIMAS 6H
+                    </span>
+
+                    <strong>
+                        {chuva_texto(chuva_sta_6)}
+                    </strong>
+
+                </div>
+
+            </div>
+
+            <div class="analise-frase">
+
+                Em Santa Tereza ocorre o encontro do
+                Rio das Antas com o Rio Carreiro.
+                A partir dessa confluência temos o
+                Rio Taquari.
+
+            </div>
+
+        </div>
+
+
+        <div class="analise-card full">
+
+            <div class="analise-titulo">
+                LEITURA DO COMPORTAMENTO DO RIO
+            </div>
+
+            <div class="analise-conclusao">
+                {leitura_rio}
+            </div>
+
+            <div class="analise-percurso">
+
+                <strong>
+                    Sentido da análise:
+                </strong>
+
+                <br><br>
+
+                Cabeceiras do Rio das Antas
+                &rarr;
+                Santa Tereza
+                &rarr;
+                Encantado / Muçum
+                &rarr;
+                Roca Sales
+                &rarr;
+                Colinas
+                &rarr;
+                Cruzeiro do Sul / Estrela
+                &rarr;
+                Bom Retiro do Sul
+                &rarr;
+                Rio Jacuí
+
+            </div>
+
+        </div>
+
+
+        <div class="analise-card">
+
+            <div class="analise-titulo">
+                BARRAGENS
+            </div>
+
+            {barragens_html}
+
+        </div>
+
+
+        <div class="analise-card">
+
+            <div class="analise-titulo">
+                CONCLUSÃO DO MOMENTO
+            </div>
+
+            <div class="analise-conclusao">
+                {conclusao}
+            </div>
+
+            <div class="analise-frase">
+
+                Situação automática atual:
+
+                <strong>
+                    {situacao}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <div class="analise-aviso">
+
+        Esta interpretação é automática e utiliza
+        somente os dados disponíveis no monitor.
+        Serve como apoio à análise e não substitui
+        alertas ou orientações oficiais dos órgãos
+        responsáveis.
+
+    </div>
+    '''
+
+
 def gerar_dashboard(
     por_estacao,
     modelo,
@@ -4049,6 +5234,13 @@ V3 · atualizado {atualizado}
         </a>
 
         <a
+            href="#analise"
+            data-aba="analise"
+        >
+            ANÁLISE
+        </a>
+
+        <a
             href="#imagens-atuais"
             data-aba="imagens-atuais"
         >
@@ -4281,6 +5473,29 @@ ainda será calibrada com dados observados.
 
 
 <!-- ======================================================
+     ANALISE
+     ====================================================== -->
+
+<section
+    id="analise"
+    class="painel-aba"
+>
+
+    <div class="secao">
+
+        {gerar_analise_hidrologica_html(
+            por_estacao,
+            modelo,
+            meteo,
+            barragens,
+        )}
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
      IMAGENS ATUAIS
      ====================================================== -->
 
@@ -4373,6 +5588,7 @@ ainda será calibrada com dados observados.
 
         var permitidas = [
             "visao-geral",
+            "analise",
             "imagens-atuais",
             "comparativo",
             "monitoramento-visual"
