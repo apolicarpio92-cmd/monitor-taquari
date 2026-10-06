@@ -44,8 +44,15 @@ CAMERAS = [
         "id": "17",
         "nome": "Colinas",
         "titulo": "Rio Taquari em Colinas",
-        "descricao": "Vista da ERS-129 e do Rio Taquari",
-        "status": "listada_ao_vivo",
+        "descricao": (
+            "Vista da ERS-129 e do Rio Taquari"
+        ),
+        "status": "ao_vivo",
+        "video_id": "JtZ_JrBeVAY",
+        "pagina": (
+            "https://www.youtube.com/watch"
+            "?v=JtZ_JrBeVAY"
+        ),
     },
     {
         "id": "5",
