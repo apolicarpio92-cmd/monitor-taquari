@@ -15,15 +15,15 @@ CAMERAS = [
     {
         "id": "3",
         "nome": "Encantado / Muçum",
-        "titulo": "Belvedere de Encantado",
+        "titulo": "Ponte da ERS-129",
         "descricao": (
-            "Vista para o Rio Taquari e Muçum"
+            "Vista do Rio Taquari entre Encantado e Muçum"
         ),
         "status": "ao_vivo",
-        "video_id": "1VWYrG9Celc",
+        "video_id": "d7Cc2gil3Hw",
         "pagina": (
             "https://www.youtube.com/watch"
-            "?v=1VWYrG9Celc"
+            "?v=d7Cc2gil3Hw"
         ),
     },
     {
@@ -31,13 +31,13 @@ CAMERAS = [
         "nome": "Roca Sales",
         "titulo": "Ponte do Rio Taquari",
         "descricao": (
-            "Vista do Rio Taquari e da ponte da ERS-129"
+            "Vista do Rio Taquari e da ponte em Roca Sales"
         ),
         "status": "ao_vivo",
-        "video_id": "3gOSQGMX76M",
+        "video_id": "dXBkUC6Aqkw",
         "pagina": (
             "https://www.youtube.com/watch"
-            "?v=3gOSQGMX76M"
+            "?v=dXBkUC6Aqkw"
         ),
     },
     {
@@ -58,9 +58,32 @@ CAMERAS = [
         "id": "5",
         "nome": "Cruzeiro / Estrela",
         "titulo": "Rio Taquari em Cruzeiro do Sul",
-        "descricao": "Vista para o Rio Taquari e Estrela",
-        "status": "listada_ao_vivo",
+        "descricao": (
+            "Vista da Casa do Morro para o Rio Taquari e Estrela"
+        ),
+        "status": "ao_vivo",
+        "video_id": "cP9jwZhv5Fg",
+        "pagina": (
+            "https://www.youtube.com/watch"
+            "?v=cP9jwZhv5Fg"
+        ),
     },
+
+    {
+        "id": "15",
+        "nome": "Bom Retiro do Sul",
+        "titulo": "Barragem e Eclusa de Bom Retiro do Sul",
+        "descricao": (
+            "Vista do Rio Taquari na barragem e eclusa"
+        ),
+        "status": "ao_vivo",
+        "video_id": "dqs6QoKIgqg",
+        "pagina": (
+            "https://www.youtube.com/watch"
+            "?v=dqs6QoKIgqg"
+        ),
+    },
+
 ]
 
 
