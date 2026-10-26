@@ -350,6 +350,11 @@ iniciar_teste_ana_nova()
 # INICIA COLETOR
 # ============================================================
 
+print(
+    "[RELEASE] ANA_NOVA_PRODUCAO_20261026_1250",
+    flush=True,
+)
+
 iniciar_coletor()
 
 
