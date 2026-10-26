@@ -145,9 +145,14 @@ def testar_ana_nova_render(log=print):
             resposta = requests.get(
                 url_serie,
                 params={
-                    "CodigoDaEstacao": codigo,
-                    "TipoFiltroData": "DATA_LEITURA",
-                    "RangeIntervaloDeBusca": "DIAS_30",
+                    "Código da Estação": int(codigo),
+                    "Tipo Filtro Data": "DATA_LEITURA",
+                    "Data de Busca (yyyy-MM-dd)": (
+                        datetime.now().strftime(
+                            "%Y-%m-%d"
+                        )
+                    ),
+                    "Range Intervalo de busca": "DIAS_30",
                 },
                 headers={
                     "Authorization": "Bearer " + token,
