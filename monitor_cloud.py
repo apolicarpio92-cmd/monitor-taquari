@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import requests
 
+from ana_api_nova import buscar_estacao
 
 from barragens import coletar_barragens
 from barragens_historico_web import (
@@ -361,448 +362,119 @@ def buscar_ana(
     codigo,
 ):
 
-    agora = datetime.now()
+    marcar_etapa(
+        "ana_nova_"
+        + str(nome)
+    )
 
-    params = {
-        "codEstacao": codigo,
-        "dataInicio": (
-            agora - timedelta(days=2)
-        ).strftime("%d/%m/%Y"),
-        "dataFim": agora.strftime(
-            "%d/%m/%Y"
-        ),
-    }
+    try:
 
-    # ========================================================
-    # ANA - TENTATIVA PRINCIPAL + FALLBACK
-    # ========================================================
+        dados = buscar_estacao(
+            nome,
+            codigo,
+            log=log,
+            dias=2,
+        )
 
-    urls_ana = [
-        (
-            ANA_URL,
-            "FILTRADO"
-        ),
-        (
-            "https://telemetriaws1.ana.gov.br/"
-            "ServiceANA.asmx/"
-            "DadosHidrometeorologicosGerais",
-            "GERAL"
-        ),
-    ]
+        marcar_etapa(
+            "ana_nova_ok_"
+            + str(nome)
+        )
 
-    resposta = None
-    ultimo_erro = None
+        return dados
 
-    for url_ana, tipo_ana in urls_ana:
+    except Exception as e:
 
-        try:
+        marcar_etapa(
+            "ana_nova_falha_"
+            + str(nome)
+        )
 
-            marcar_etapa(
-                "ana_http_"
-                + str(nome)
-                + "_"
-                + str(tipo_ana)
-            )
-
-            inicio_http = time.monotonic()
-
-            resposta_teste = (
-                requisicao_ana_isolada(
-                    url_ana,
-                    params,
-                )
-            )
-
-            resposta_teste.raise_for_status()
-
-            duracao_http = (
-                time.monotonic()
-                - inicio_http
-            )
-
-            log(
-                (
-                    f"ANA {nome} endpoint {tipo_ana}: "
-                    f"HTTP {resposta_teste.status_code} "
-                    f"em {duracao_http:.2f}s "
-                    f"({len(resposta_teste.content)} bytes)"
-                )
-            )
-
-            marcar_etapa(
-                "ana_parse_"
-                + str(nome)
-                + "_"
-                + str(tipo_ana)
-            )
-
-            if not resposta_teste.text.strip():
-
-                raise RuntimeError(
-                    "Resposta vazia da ANA"
-                )
-
-            resposta = resposta_teste
-
-            if tipo_ana == "GERAL":
-
-                log(
-                    f"ANA {nome}: endpoint GERAL "
-                    "utilizado como fallback."
-                )
-
-            break
-
-        except Exception as e:
-
-            ultimo_erro = e
-
-            marcar_etapa(
-                "ana_falha_"
-                + str(nome)
-                + "_"
-                + str(tipo_ana)
-            )
-
-            log(
-                f"ANA {nome}: falha endpoint "
-                f"{tipo_ana}: {type(e).__name__}: {e}"
-            )
-
-    if resposta is None:
+        log(
+            "ANA NOVA "
+            + str(nome)
+            + ": falha: "
+            + type(e).__name__
+            + ": "
+            + str(e)
+        )
 
         # ====================================================
         # FALLBACK LOCAL
         #
-        # Se os endpoints da ANA falharem, nao apagamos
-        # a ultima leitura valida. Recuperamos o historico
-        # local ja salvo pelo monitor.
+        # A API antiga nao e mais usada como contingencia.
+        # Em falha da nova API, preservamos a ultima serie
+        # valida ja persistida no historico/Turso.
         # ====================================================
 
-        arquivo_historico = (
-            BASE
-            / "historico"
-            / "telemetria_historico.csv"
-        )
+        try:
 
-        dados_locais = []
+            historico = (
+                carregar_historico()
+            )
 
-        if arquivo_historico.exists():
-
-            try:
-
-                with arquivo_historico.open(
-                    "r",
-                    encoding="utf-8-sig",
-                    newline=""
-                ) as f:
-
-                    reader = csv.DictReader(
-                        f,
-                        delimiter=";"
-                    )
-
-                    for row in reader:
-
-                        estacao_row = (
-                            row.get("estacao")
-                            or row.get("nome")
-                            or ""
-                        ).strip()
-
-                        codigo_row = (
-                            row.get("codigo")
-                            or row.get("codEstacao")
-                            or ""
-                        ).strip()
-
-                        if (
-                            estacao_row != nome
-                            and codigo_row != str(codigo)
-                        ):
-                            continue
-
-                        data_txt = (
-                            row.get("data_hora")
-                            or row.get("DataHora")
-                            or ""
-                        ).strip()
-
-                        if not data_txt:
-                            continue
-
-                        dt = None
-
-                        formatos = [
-                            "%Y-%m-%d %H:%M:%S",
-                            "%Y-%m-%d %H:%M",
-                            "%d/%m/%Y %H:%M:%S",
-                            "%d/%m/%Y %H:%M",
-                        ]
-
-                        for formato in formatos:
-
-                            try:
-
-                                dt = datetime.strptime(
-                                    data_txt,
-                                    formato
-                                )
-
-                                break
-
-                            except Exception:
-                                pass
-
-                        if dt is None:
-                            continue
-
-                        nivel_txt = (
-                            row.get("nivel_m")
-                            or row.get("nivel")
-                            or row.get("Nivel")
-                            or ""
-                        ).strip()
-
-                        if not nivel_txt:
-                            continue
-
-                        try:
-
-                            nivel_m = float(
-                                nivel_txt.replace(
-                                    ",",
-                                    "."
-                                )
-                            )
-
-                        except Exception:
-                            continue
-
-                        vazao = None
-
-                        vazao_txt = (
-                            row.get("vazao")
-                            or row.get("Vazao")
-                            or ""
-                        ).strip()
-
-                        if vazao_txt:
-
-                            try:
-
-                                vazao = float(
-                                    vazao_txt.replace(
-                                        ",",
-                                        "."
-                                    )
-                                )
-
-                            except Exception:
-                                pass
-
-                        chuva = None
-
-                        chuva_txt = (
-                            row.get("chuva")
-                            or row.get("Chuva")
-                            or ""
-                        ).strip()
-
-                        if chuva_txt:
-
-                            try:
-
-                                chuva = float(
-                                    chuva_txt.replace(
-                                        ",",
-                                        "."
-                                    )
-                                )
-
-                            except Exception:
-                                pass
-
-                        dados_locais.append(
-                            {
-                                "estacao":
-                                    nome,
-
-                                "codigo":
-                                    str(codigo),
-
-                                "data_hora":
-                                    dt,
-
-                                "nivel_m":
-                                    nivel_m,
-
-                                "vazao":
-                                    vazao,
-
-                                "chuva":
-                                    chuva,
-
-                                "fonte_ana":
-                                    "HISTORICO_LOCAL",
-                            }
+            dados_locais = [
+                r
+                for r in historico
+                if (
+                    r.get(
+                        "estacao"
+                    ) == nome
+                    or str(
+                        r.get(
+                            "codigo",
+                            ""
                         )
-
-                dados_locais = sorted(
-                    dados_locais,
-                    key=lambda x:
-                        x["data_hora"]
+                    ) == str(codigo)
                 )
+            ]
 
-            except Exception as e:
+            dados_locais = sorted(
+                dados_locais,
+                key=lambda x:
+                    x["data_hora"],
+            )
 
-                log(
-                    f"ERRO fallback local {nome}: {e}"
-                )
+        except Exception as erro_hist:
+
+            log(
+                "ERRO fallback local "
+                + str(nome)
+                + ": "
+                + str(erro_hist)
+            )
+
+            dados_locais = []
 
         if dados_locais:
 
-            ultima_local = dados_locais[-1]
+            ultima_local = (
+                dados_locais[-1]
+            )
 
             log(
-                f"ANA {nome}: indisponivel. "
-                "Usando historico local: "
-                f"{ultima_local['nivel_m']:.2f} m "
-                f"de "
-                f"{ultima_local['data_hora'].strftime('%d/%m/%Y %H:%M')}."
+                "ANA NOVA "
+                + str(nome)
+                + ": usando historico local: "
+                + f'{ultima_local["nivel_m"]:.2f} m '
+                + "de "
+                + ultima_local[
+                    "data_hora"
+                ].strftime(
+                    "%d/%m/%Y %H:%M"
+                )
+                + "."
             )
 
             return dados_locais
 
         raise RuntimeError(
-            f"ANA indisponivel para {nome} "
-            "e nenhum historico local foi encontrado: "
-            f"{ultimo_erro}"
+            "Nova API ANA indisponivel "
+            "para "
+            + str(nome)
+            + " e nenhum historico local "
+            "foi encontrado."
         )
-
-    raiz = ET.fromstring(
-        resposta.content
-    )
-
-    registros = []
-
-    for elemento in raiz.iter():
-
-        filhos = list(
-            elemento
-        )
-
-        if not filhos:
-            continue
-
-        registro = {}
-
-        for filho in filhos:
-
-            if list(filho):
-                continue
-
-            chave = limpar_tag(
-                filho.tag
-            )
-
-            valor = (
-                filho.text.strip()
-                if filho.text
-                else ""
-            )
-
-            registro[
-                chave
-            ] = valor
-
-        if "DataHora" not in registro:
-            continue
-
-        dt = converter_data(
-            registro.get(
-                "DataHora",
-                ""
-            )
-        )
-
-        if not dt:
-            continue
-
-        try:
-
-            nivel_cm = float(
-                registro.get(
-                    "Nivel",
-                    ""
-                )
-            )
-
-            nivel_m = (
-                nivel_cm
-                / 100.0
-            )
-
-        except Exception:
-
-            continue
-
-        try:
-
-            vazao = float(
-                registro.get(
-                    "Vazao",
-                    ""
-                )
-            )
-
-        except Exception:
-
-            vazao = None
-
-        try:
-
-            chuva = float(
-                registro.get(
-                    "Chuva",
-                    ""
-                )
-            )
-
-        except Exception:
-
-            chuva = None
-
-        registros.append(
-            {
-                "estacao": nome,
-                "codigo": codigo,
-                "data_hora": dt,
-                "nivel_m": nivel_m,
-                "vazao": vazao,
-                "chuva": chuva,
-            }
-        )
-
-    # remove duplicados
-    unicos = {}
-
-    for r in registros:
-
-        chave = (
-            r["estacao"],
-            r["data_hora"],
-        )
-
-        unicos[
-            chave
-        ] = r
-
-    return sorted(
-        unicos.values(),
-        key=lambda x:
-            x["data_hora"]
-    )
 
 
 # ============================================================
