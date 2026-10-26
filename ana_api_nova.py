@@ -178,10 +178,41 @@ def testar_ana_nova_render(log=print):
         )
 
         if resposta.status_code != 200:
+
+            detalhe = None
+
+            try:
+                erro_json = resposta.json()
+
+                if isinstance(erro_json, dict):
+                    detalhe = {
+                        "status": erro_json.get("status"),
+                        "code": erro_json.get("code"),
+                        "message": erro_json.get("message"),
+                    }
+
+            except Exception:
+                detalhe = (
+                    resposta.text[:500]
+                    if resposta.text
+                    else None
+                )
+
+            _log_seguro(
+                log,
+                nome
+                + ": erro HTTP "
+                + str(resposta.status_code)
+                + " detalhe="
+                + str(detalhe)
+            )
+
             resultado["estacoes"][nome] = {
                 "ok": False,
                 "http": resposta.status_code,
+                "detalhe": detalhe,
             }
+
             continue
 
         try:
