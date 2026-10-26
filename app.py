@@ -245,6 +245,57 @@ except Exception:
 
 
 # ============================================================
+# TESTE ISOLADO - NOVA API ANA
+#
+# Executa uma unica vez em thread separada.
+# Nao altera buscar_ana(), historico ou dashboard.
+# ============================================================
+
+def iniciar_teste_ana_nova():
+
+    def executar():
+
+        try:
+
+            from ana_api_nova import (
+                testar_ana_nova_render,
+            )
+
+            def log_ana(mensagem):
+
+                print(
+                    "[ANA NOVA] "
+                    + str(mensagem),
+                    flush=True,
+                )
+
+            testar_ana_nova_render(
+                log_ana
+            )
+
+        except Exception as e:
+
+            print(
+                "[ANA NOVA] teste isolado falhou: "
+                + type(e).__name__
+                + ": "
+                + str(e),
+                flush=True,
+            )
+
+    thread = threading.Thread(
+        target=executar,
+        daemon=True,
+        name="teste-ana-nova",
+    )
+
+    thread.start()
+
+
+iniciar_teste_ana_nova()
+
+
+# ============================================================
 # INICIA COLETOR
 # ============================================================
 
