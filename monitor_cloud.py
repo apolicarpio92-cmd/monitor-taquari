@@ -3224,24 +3224,24 @@ def gerar_analise_hidrologica_html(
     }}
 
     .analise-linha span {{
-        color:#cbd6db;
+        color:#334155;
     }}
 
     .analise-linha strong {{
-        color:#edf3f5;
+        color:#1e293b;
     }}
 
     .analise-linha small {{
-        color:#84949c;
+        color:#64748b;
     }}
 
     .analise-aviso {{
         margin-top:15px;
         padding:12px 14px;
         border-radius:9px;
-        background:#171a13;
-        border:1px solid #373a23;
-        color:#aeb3a0;
+        background:#f8fafc;
+        border:1px solid #d8e1e8;
+        color:#64748b;
         font-size:10px;
         line-height:1.5;
     }}
@@ -3923,8 +3923,8 @@ Monitor Taquari V3
 
 body {{
     margin: 0;
-    background: #0b1115;
-    color: #eef4f7;
+    background: #f4f7fa;
+    color: #1e293b;
     font-family:
         Segoe UI,
         Arial,
@@ -3933,8 +3933,9 @@ body {{
 
 header {{
     padding: 24px 32px;
-    background: #131b21;
-    border-bottom: 1px solid #29343b;
+    background: #1f2937;
+    border-bottom: 1px solid #334155;
+    color: #f8fafc;
 }}
 
 h1 {{
@@ -3943,7 +3944,7 @@ h1 {{
 }}
 
 .atualizado {{
-    color: #8899a5;
+    color: #cbd5e1;
     margin-top: 6px;
 }}
 
@@ -3964,14 +3965,15 @@ main {{
 }}
 
 .card {{
-    background: #151d23;
-    border: 1px solid #29363e;
+    background: #ffffff;
+    border: 1px solid #d8e1e8;
     border-radius: 14px;
     padding: 20px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .06);
 }}
 
 .titulo {{
-    color: #899ba6;
+    color: #64748b;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: .5px;
@@ -3988,7 +3990,7 @@ main {{
 }}
 
 .hora {{
-    color: #93a1aa;
+    color: #64748b;
     margin-top: 4px;
 }}
 
@@ -4015,27 +4017,27 @@ main {{
 }}
 
 .ana-atual {{
-    color: #9fe3b0;
-    background: #102218;
-    border-color: #285b38;
+    color: #166534;
+    background: #f0fdf4;
+    border-color: #86efac;
 }}
 
 .ana-atencao {{
-    color: #f1cf78;
-    background: #2a2211;
-    border-color: #655326;
+    color: #92400e;
+    background: #fffbeb;
+    border-color: #fcd34d;
 }}
 
 .ana-defasada {{
-    color: #f09a9a;
-    background: #2a1515;
-    border-color: #693232;
+    color: #991b1b;
+    background: #fef2f2;
+    border-color: #fca5a5;
 }}
 
 .ana-indisponivel {{
-    color: #a8b4ba;
-    background: #171d20;
-    border-color: #3a464c;
+    color: #475569;
+    background: #f8fafc;
+    border-color: #cbd5e1;
 }}
 
 .metricas {{
@@ -4048,14 +4050,15 @@ main {{
 
 .metricas div,
 .chuva-grid div {{
-    background: #0d1418;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 11px;
 }}
 
 span {{
     display: block;
-    color: #7e909b;
+    color: #64748b;
     font-size: 11px;
 }}
 
@@ -4076,7 +4079,8 @@ strong {{
 }}
 
 .previsao-item {{
-    background: #0d1418;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     padding: 14px;
     border-radius: 9px;
 }}
@@ -4086,7 +4090,7 @@ strong {{
 }}
 
 .previsao-item small {{
-    color: #83939d;
+    color: #64748b;
     display: block;
     margin-top: 7px;
 }}
@@ -4100,14 +4104,15 @@ strong {{
 }}
 
 .prob {{
-    color: #899ba5;
+    color: #64748b;
     margin-top: 13px;
 }}
 
 .alerta {{
     margin-top: 14px;
-    background: #352812;
-    border-left: 4px solid #e0a33d;
+    background: #fff7ed;
+    color: #9a3412;
+    border-left: 4px solid #b45309;
     padding: 13px;
     border-radius: 5px;
 }}
@@ -4133,9 +4138,10 @@ strong {{
 
     padding: 7px;
 
-    background: #10171c;
-    border: 1px solid #29363e;
+    background: #ffffff;
+    border: 1px solid #d8e1e8;
     border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .05);
 }}
 
 .nav-monitor a {{
@@ -4148,7 +4154,7 @@ strong {{
 
     border-radius: 8px;
 
-    color: #8fa0aa;
+    color: #475569;
     text-decoration: none;
 
     font-size: 12px;
@@ -4162,17 +4168,17 @@ strong {{
 }}
 
 .nav-monitor a:hover {{
-    color: #e8eef1;
-    background: #182229;
+    color: #1d4ed8;
+    background: #eff6ff;
 }}
 
 .nav-monitor a.ativo {{
-    color: #f3f7f8;
+    color: #ffffff;
 
-    background: #1f2c33;
+    background: #1d4ed8;
 
     box-shadow:
-        inset 0 0 0 1px #3b515d;
+        inset 0 0 0 1px #1e40af;
 }}
 
 /* ==========================================================
@@ -4924,9 +4930,9 @@ strong {{
 .aviso {{
     margin-top: 25px;
     padding: 15px;
-    background: #1c2124;
-    border-left: 4px solid #667783;
-    color: #aab5bc;
+    background: #f8fafc;
+    border-left: 4px solid #94a3b8;
+    color: #475569;
 }}
 
 @media(max-width:700px) {{
