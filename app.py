@@ -720,12 +720,6 @@ def dashboard():
                 obter_previsao_segura()
             )
 
-            print(
-                "[METEO] Previsao carregada "
-                "sob demanda pelo dashboard.",
-                flush=True,
-            )
-
         except Exception as e:
 
             previsao_exibir = {
@@ -733,13 +727,6 @@ def dashboard():
                 "erro": str(e),
                 "dias": [],
             }
-
-            print(
-                "[METEO] Erro ao carregar "
-                "previsao pelo dashboard:",
-                e,
-                flush=True,
-            )
 
     html_graficos = (
         gerar_html_graficos_historicos()
@@ -771,12 +758,6 @@ def dashboard():
                 obter_previsao_segura(
                     "cabeceiras"
                 )
-            )
-
-            print(
-                "[METEO] Cabeceiras/Vacaria "
-                "carregada sob demanda.",
-                flush=True,
             )
 
         except Exception as e:
