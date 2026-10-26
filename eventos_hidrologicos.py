@@ -2105,13 +2105,14 @@ def gerar_html_eventos_hidrologicos():
     margin-bottom:18px;
     padding:20px;
     border-radius:16px;
-    background:#151e23;
-    border:1px solid #2b3941;
-    color:#f4f7f8;
+    background:#ffffff;
+    border:1px solid #d8e1e8;
+    color:#1e293b;
+    box-shadow:0 4px 14px rgba(15,23,42,.06);
 }
 
 .eventos-titulo {
-    color:#8fb8d0;
+    color:#1d4ed8;
     font-size:15px;
     font-weight:800;
     letter-spacing:.04em;
@@ -2119,7 +2120,7 @@ def gerar_html_eventos_hidrologicos():
 
 .eventos-subtitulo {
     margin-top:4px;
-    color:#819ba9;
+    color:#64748b;
     font-size:11px;
 }
 
@@ -2133,14 +2134,14 @@ def gerar_html_eventos_hidrologicos():
 .eventos-contagem span {
     padding:6px 9px;
     border-radius:7px;
-    background:#0c1418;
-    border:1px solid #293a43;
-    color:#91aab6;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    color:#64748b;
     font-size:10px;
 }
 
 .eventos-contagem strong {
-    color:#fff;
+    color:#1e293b;
 }
 
 .eventos-resumo {
@@ -2152,28 +2153,29 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .eventos-card {
-    background:#0c1418;
-    border:1px solid #293a43;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
     border-radius:11px;
     padding:12px;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
 }
 
 .eventos-card span {
     display:block;
-    color:#7593a2;
+    color:#64748b;
     font-size:10px;
     margin-bottom:5px;
 }
 
 .eventos-card strong {
     display:block;
-    color:#fff;
+    color:#1e293b;
     font-size:18px;
 }
 
 .eventos-faixa {
     margin-top:5px;
-    color:#7e9aa8;
+    color:#64748b;
     font-size:10px;
 }
 
@@ -2185,8 +2187,8 @@ def gerar_html_eventos_hidrologicos():
     padding:13px;
     margin-top:9px;
     border-radius:11px;
-    background:#0e171c;
-    border:1px solid #263740;
+    background:#ffffff;
+    border:1px solid #d8e1e8;
 }
 
 .evento-item-informativo {
@@ -2202,13 +2204,13 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-data {
-    color:#fff;
+    color:#1e293b;
     font-size:13px;
     font-weight:700;
 }
 
 .evento-chuva {
-    color:#9fc9de;
+    color:#2563eb;
     font-size:12px;
     font-weight:700;
 }
@@ -2230,15 +2232,15 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-valido {
-    color:#a9dfc3;
-    background:#10231b;
-    border:1px solid #315943;
+    color:#166534;
+    background:#f0fdf4;
+    border:1px solid #86efac;
 }
 
 .evento-info {
-    color:#c1ccd1;
-    background:#182126;
-    border:1px solid #39484f;
+    color:#475569;
+    background:#f8fafc;
+    border:1px solid #cbd5e1;
 }
 
 
@@ -2253,32 +2255,32 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-confianca-alta {
-    color:#a9dfc3;
-    background:#10231b;
-    border:1px solid #315943;
+    color:#166534;
+    background:#f0fdf4;
+    border:1px solid #86efac;
 }
 
 .evento-confianca-media {
-    color:#edd18c;
-    background:#251f12;
-    border:1px solid #6d592d;
+    color:#92400e;
+    background:#fffbeb;
+    border:1px solid #fcd34d;
 }
 
 .evento-confianca-baixa {
-    color:#e6aa9e;
-    background:#281815;
-    border:1px solid #71443a;
+    color:#991b1b;
+    background:#fef2f2;
+    border:1px solid #fca5a5;
 }
 
 .evento-confianca-info {
-    color:#b9c6cc;
-    background:#182126;
-    border:1px solid #39484f;
+    color:#475569;
+    background:#f8fafc;
+    border:1px solid #cbd5e1;
 }
 
 .evento-confianca-detalhes {
     margin-top:7px;
-    color:#718d9a;
+    color:#64748b;
     font-size:9px;
     line-height:1.5;
 }
@@ -2297,8 +2299,8 @@ def gerar_html_eventos_hidrologicos():
     margin-top:8px;
     padding:9px 10px;
     border-radius:8px;
-    background:#091216;
-    border:1px solid #263740;
+    background:#f8fafc;
+    border:1px solid #d8e1e8;
 }
 
 .evento-influencia-topo {
@@ -2309,7 +2311,7 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-influencia-topo span {
-    color:#7693a1;
+    color:#64748b;
     font-size:9px;
 }
 
@@ -2318,30 +2320,30 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .influencia-alta {
-    color:#efc574;
+    color:#b45309;
 }
 
 .influencia-media {
-    color:#a8cddd;
+    color:#1d4ed8;
 }
 
 .influencia-baixa {
-    color:#a9dfc3;
+    color:#166534;
 }
 
 .influencia-sem-dados {
-    color:#9baab1;
+    color:#64748b;
 }
 
 .evento-influencia-texto {
     margin-top:5px;
-    color:#718d9a;
+    color:#64748b;
     font-size:9px;
     line-height:1.5;
 }
 
 .evento-motivo {
-    color:#718d9a;
+    color:#64748b;
     font-size:9px;
 }
 
@@ -2354,33 +2356,33 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-dado {
-    background:#091216;
+    background:#f8fafc;
     border-radius:8px;
     padding:8px;
 }
 
 .evento-dado span {
     display:block;
-    color:#698895;
+    color:#64748b;
     font-size:9px;
     margin-bottom:4px;
 }
 
 .evento-dado strong {
-    color:#fff;
+    color:#1e293b;
     font-size:12px;
 }
 
 .eventos-nota {
     margin-top:12px;
-    color:#66818e;
+    color:#64748b;
     font-size:9px;
     line-height:1.5;
 }
 
 .eventos-status {
     margin-top:15px;
-    color:#a6bbc4;
+    color:#475569;
     font-size:12px;
 }
 
