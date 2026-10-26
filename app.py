@@ -73,6 +73,7 @@ INTERVALO = 300
 
 _lock = threading.Lock()
 _coletor_iniciado = False
+_turso_pronto = threading.Event()
 
 INICIO_PROCESSO = datetime.now()
 
@@ -100,6 +101,13 @@ def agora_iso():
 # ============================================================
 
 def coletor():
+
+    print(
+        "[CLOUD] Coletor aguardando inicializacao do Turso.",
+        flush=True,
+    )
+
+    _turso_pronto.wait()
 
     print(
         "[CLOUD] Coletor iniciado.",
@@ -218,63 +226,94 @@ def iniciar_coletor():
 
 # ============================================================
 # TURSO
+#
+# A restauracao roda em thread separada para nunca bloquear
+# o bind HTTP do Gunicorn/Render. O coletor aguarda este
+# processo terminar antes de modificar arquivos persistentes.
 # ============================================================
 
-if turso_configurado():
+def iniciar_turso_em_background():
 
-    restaurado = False
-
-    for tentativa in range(
-        1,
-        5,
-    ):
+    def executar():
 
         try:
 
-            inicializar()
-            restaurar_do_turso()
+            if not turso_configurado():
 
-            restaurado = True
-
-            print(
-                "[TURSO] Restauracao inicial validada "
-                f"na tentativa {tentativa}.",
-                flush=True,
-            )
-
-            break
-
-        except Exception:
-
-            print(
-                "[TURSO] Falha na restauracao inicial "
-                f"(tentativa {tentativa}/4).",
-                flush=True,
-            )
-
-            traceback.print_exc()
-
-            if tentativa < 4:
-
-                time.sleep(
-                    tentativa * 2
+                print(
+                    "[TURSO] Credenciais nao encontradas.",
+                    flush=True,
                 )
 
-    if not restaurado:
+                return
 
-        print(
-            "[TURSO] ATENCAO: restauracao inicial "
-            "nao validada. Upload remoto permanece "
-            "bloqueado nesta instancia.",
-            flush=True,
-        )
+            restaurado = False
 
-else:
+            for tentativa in range(
+                1,
+                5,
+            ):
 
-    print(
-        "[TURSO] Credenciais nao encontradas.",
-        flush=True,
+                try:
+
+                    inicializar()
+                    restaurar_do_turso()
+
+                    restaurado = True
+
+                    print(
+                        "[TURSO] Restauracao inicial validada "
+                        f"na tentativa {tentativa}.",
+                        flush=True,
+                    )
+
+                    break
+
+                except Exception:
+
+                    print(
+                        "[TURSO] Falha na restauracao inicial "
+                        f"(tentativa {tentativa}/4).",
+                        flush=True,
+                    )
+
+                    traceback.print_exc()
+
+                    if tentativa < 4:
+
+                        time.sleep(
+                            tentativa * 2
+                        )
+
+            if not restaurado:
+
+                print(
+                    "[TURSO] ATENCAO: restauracao inicial "
+                    "nao validada. Upload remoto permanece "
+                    "bloqueado nesta instancia.",
+                    flush=True,
+                )
+
+        finally:
+
+            _turso_pronto.set()
+
+            print(
+                "[TURSO] Etapa inicial concluida; "
+                "coletor liberado.",
+                flush=True,
+            )
+
+    thread = threading.Thread(
+        target=executar,
+        daemon=True,
+        name="turso-inicializacao",
     )
+
+    thread.start()
+
+
+iniciar_turso_em_background()
 
 
 # ============================================================
