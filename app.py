@@ -88,6 +88,14 @@ ESTADO_RUNTIME = {
     "ultimo_ping_externo": None,
 }
 
+ESTADO_ANA_NOVA = {
+    "iniciado": False,
+    "concluido": False,
+    "resultado": None,
+    "erro": None,
+    "testado_em": None,
+}
+
 
 def agora_iso():
     return datetime.now().isoformat(
@@ -253,6 +261,19 @@ except Exception:
 
 def iniciar_teste_ana_nova():
 
+    ESTADO_ANA_NOVA[
+        "iniciado"
+    ] = True
+
+    ESTADO_ANA_NOVA[
+        "concluido"
+    ] = False
+
+    print(
+        "[ANA NOVA] thread de teste iniciada.",
+        flush=True,
+    )
+
     def executar():
 
         try:
@@ -269,11 +290,31 @@ def iniciar_teste_ana_nova():
                     flush=True,
                 )
 
-            testar_ana_nova_render(
+            resultado = testar_ana_nova_render(
                 log_ana
             )
 
+            ESTADO_ANA_NOVA[
+                "resultado"
+            ] = resultado
+
+            ESTADO_ANA_NOVA[
+                "erro"
+            ] = None
+
         except Exception as e:
+
+            ESTADO_ANA_NOVA[
+                "resultado"
+            ] = None
+
+            ESTADO_ANA_NOVA[
+                "erro"
+            ] = (
+                type(e).__name__
+                + ": "
+                + str(e)
+            )
 
             print(
                 "[ANA NOVA] teste isolado falhou: "
@@ -282,6 +323,16 @@ def iniciar_teste_ana_nova():
                 + str(e),
                 flush=True,
             )
+
+        finally:
+
+            ESTADO_ANA_NOVA[
+                "concluido"
+            ] = True
+
+            ESTADO_ANA_NOVA[
+                "testado_em"
+            ] = agora_iso()
 
     thread = threading.Thread(
         target=executar,
@@ -883,6 +934,35 @@ def api_eventos_hidrologicos():
 
     return jsonify(
         dados
+    )
+
+
+@app.get("/ana-nova-status")
+def ana_nova_status():
+
+    return jsonify(
+        {
+            "status": "ok",
+            "iniciado": bool(
+                ESTADO_ANA_NOVA.get(
+                    "iniciado"
+                )
+            ),
+            "concluido": bool(
+                ESTADO_ANA_NOVA.get(
+                    "concluido"
+                )
+            ),
+            "resultado": ESTADO_ANA_NOVA.get(
+                "resultado"
+            ),
+            "erro": ESTADO_ANA_NOVA.get(
+                "erro"
+            ),
+            "testado_em": ESTADO_ANA_NOVA.get(
+                "testado_em"
+            ),
+        }
     )
 
 
