@@ -1,5 +1,7 @@
 import os
-from datetime import datetime
+import threading
+import time
+from datetime import datetime, timedelta
 
 import requests
 
@@ -9,10 +11,23 @@ BASE = (
     "hidrowebservice/EstacoesTelemetricas"
 )
 
+URL_AUTH = BASE + "/OAUth/v1"
+URL_SERIE = (
+    BASE
+    + "/HidroinfoanaSerieTelemetricaAdotada/v1"
+)
+
 ESTACOES_TESTE = {
     "Santa Tereza": "86472600",
     "Linha Jose Julio": "86472000",
 }
+
+_TOKEN = None
+_TOKEN_CRIADO_EM = 0.0
+_TOKEN_LOCK = threading.Lock()
+TOKEN_REUSO_SEGUNDOS = 50 * 60
+
+TIMEOUT = (8, 20)
 
 
 def _log_seguro(log, mensagem):
@@ -22,20 +37,367 @@ def _log_seguro(log, mensagem):
         pass
 
 
-def testar_ana_nova_render(log=print):
+def _numero(valor):
 
-    usuario = os.getenv("ANA_API_USUARIO")
-    senha = os.getenv("ANA_API_SENHA")
+    if valor is None:
+        return None
 
-    if not usuario or not senha:
+    texto = str(valor).strip()
+
+    if not texto:
+        return None
+
+    texto = texto.replace(",", ".")
+
+    try:
+        return float(texto)
+    except Exception:
+        return None
+
+
+def _data_hora(valor):
+
+    if valor is None:
+        return None
+
+    texto = str(valor).strip()
+
+    if not texto:
+        return None
+
+    formatos = [
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%d/%m/%Y %H:%M:%S",
+        "%d/%m/%Y %H:%M",
+    ]
+
+    for formato in formatos:
+
+        try:
+            return datetime.strptime(
+                texto,
+                formato,
+            )
+        except Exception:
+            pass
+
+    return None
+
+
+def obter_token(
+    log=print,
+    forcar=False,
+):
+
+    global _TOKEN
+    global _TOKEN_CRIADO_EM
+
+    agora = time.monotonic()
+
+    if (
+        not forcar
+        and _TOKEN
+        and (
+            agora
+            - _TOKEN_CRIADO_EM
+        ) < TOKEN_REUSO_SEGUNDOS
+    ):
+        return _TOKEN
+
+    with _TOKEN_LOCK:
+
+        agora = time.monotonic()
+
+        if (
+            not forcar
+            and _TOKEN
+            and (
+                agora
+                - _TOKEN_CRIADO_EM
+            ) < TOKEN_REUSO_SEGUNDOS
+        ):
+            return _TOKEN
+
+        usuario = os.getenv(
+            "ANA_API_USUARIO"
+        )
+
+        senha = os.getenv(
+            "ANA_API_SENHA"
+        )
+
+        if not usuario or not senha:
+            raise RuntimeError(
+                "Credenciais da nova API ANA "
+                "ausentes no ambiente."
+            )
+
+        resposta = requests.get(
+            URL_AUTH,
+            headers={
+                "Identificador": usuario,
+                "Senha": senha,
+                "User-Agent":
+                    "Monitor-Taquari-V3/1.0",
+            },
+            timeout=TIMEOUT,
+        )
+
+        resposta.raise_for_status()
+
+        payload = resposta.json()
+
+        items = (
+            payload.get("items")
+            or {}
+        )
+
+        if isinstance(items, list):
+            item = (
+                items[0]
+                if items
+                else {}
+            )
+        elif isinstance(items, dict):
+            item = items
+        else:
+            item = {}
+
+        token = (
+            item.get(
+                "tokenautenticacao"
+            )
+            or item.get(
+                "Tokenautenticacao"
+            )
+            or item.get(
+                "tokenAutenticacao"
+            )
+        )
+
+        if not token:
+            raise RuntimeError(
+                "Token da nova API ANA "
+                "nao localizado na resposta."
+            )
+
+        _TOKEN = token
+        _TOKEN_CRIADO_EM = (
+            time.monotonic()
+        )
+
         _log_seguro(
             log,
-            "credenciais ausentes no ambiente."
+            "ANA NOVA: token renovado com sucesso."
         )
-        return {
-            "ok": False,
-            "erro": "credenciais_ausentes",
-        }
+
+        return _TOKEN
+
+
+def _consultar_serie(
+    codigo,
+    token,
+):
+
+    resposta = requests.get(
+        URL_SERIE,
+        params={
+            "Código da Estação":
+                int(codigo),
+            "Tipo Filtro Data":
+                "DATA_LEITURA",
+            "Data de Busca (yyyy-MM-dd)":
+                datetime.now().strftime(
+                    "%Y-%m-%d"
+                ),
+            "Range Intervalo de busca":
+                "DIAS_30",
+        },
+        headers={
+            "Authorization":
+                "Bearer " + token,
+            "User-Agent":
+                "Monitor-Taquari-V3/1.0",
+        },
+        timeout=TIMEOUT,
+    )
+
+    return resposta
+
+
+def buscar_estacao(
+    nome,
+    codigo,
+    log=print,
+    dias=2,
+):
+
+    token = obter_token(
+        log=log
+    )
+
+    resposta = _consultar_serie(
+        codigo,
+        token,
+    )
+
+    # Token pode ter expirado antes do cache local.
+    if resposta.status_code in (
+        401,
+        403,
+    ):
+
+        token = obter_token(
+            log=log,
+            forcar=True,
+        )
+
+        resposta = _consultar_serie(
+            codigo,
+            token,
+        )
+
+    resposta.raise_for_status()
+
+    payload = resposta.json()
+
+    registros_api = (
+        payload.get("items")
+        or []
+    )
+
+    if not isinstance(
+        registros_api,
+        list,
+    ):
+        raise RuntimeError(
+            "Formato inesperado em items "
+            "da nova API ANA."
+        )
+
+    limite = (
+        datetime.now()
+        - timedelta(
+            days=max(
+                1,
+                int(dias),
+            )
+        )
+    )
+
+    registros = []
+
+    for item in registros_api:
+
+        if not isinstance(
+            item,
+            dict,
+        ):
+            continue
+
+        dt = _data_hora(
+            item.get(
+                "Data_Hora_Medicao"
+            )
+            or item.get(
+                "Data_Atualizacao"
+            )
+        )
+
+        if dt is None:
+            continue
+
+        if dt < limite:
+            continue
+
+        cota_cm = _numero(
+            item.get(
+                "Cota_Adotada"
+            )
+        )
+
+        if cota_cm is None:
+            continue
+
+        registros.append(
+            {
+                "estacao": nome,
+                "codigo": str(codigo),
+                "data_hora": dt,
+                "nivel_m":
+                    cota_cm / 100.0,
+                "vazao": _numero(
+                    item.get(
+                        "Vazao_Adotada"
+                    )
+                ),
+                "chuva": _numero(
+                    item.get(
+                        "Chuva_Adotada"
+                    )
+                ),
+                "fonte_ana":
+                    "HIDROWEBSERVICE",
+            }
+        )
+
+    unicos = {}
+
+    for registro in registros:
+
+        chave = (
+            registro["estacao"],
+            registro["data_hora"],
+        )
+
+        unicos[chave] = registro
+
+    saida = sorted(
+        unicos.values(),
+        key=lambda x:
+            x["data_hora"],
+    )
+
+    if not saida:
+        raise RuntimeError(
+            "Nova API ANA retornou "
+            "zero leituras validas para "
+            + str(nome)
+            + "."
+        )
+
+    ultimo = saida[-1]
+
+    _log_seguro(
+        log,
+        (
+            "ANA NOVA "
+            + str(nome)
+            + ": "
+            + f'{ultimo["nivel_m"]:.2f} m '
+            + "| "
+            + ultimo["data_hora"].strftime(
+                "%d/%m/%Y %H:%M"
+            )
+            + " | "
+            + str(len(saida))
+            + " leituras recentes"
+        )
+    )
+
+    return saida
+
+
+def testar_ana_nova_render(
+    log=print,
+):
+
+    resultado = {
+        "ok": True,
+        "estacoes": {},
+    }
 
     _log_seguro(
         log,
@@ -43,248 +405,167 @@ def testar_ana_nova_render(log=print):
     )
 
     try:
-        resposta_auth = requests.get(
-            BASE + "/OAUth/v1",
-            headers={
-                "Identificador": usuario,
-                "Senha": senha,
-                "User-Agent": "Monitor-Taquari-V3/1.0",
-            },
-            timeout=(8, 20),
+
+        token = obter_token(
+            log=log,
+            forcar=True,
         )
-    except Exception as exc:
+
+        if not token:
+            raise RuntimeError(
+                "Token nao obtido."
+            )
+
         _log_seguro(
             log,
-            "erro de conexao na autenticacao: "
+            "autenticacao HTTP 200"
+        )
+
+        _log_seguro(
+            log,
+            "autenticacao OK; token recebido e ocultado."
+        )
+
+    except Exception as exc:
+
+        _log_seguro(
+            log,
+            "falha de autenticacao: "
             + type(exc).__name__
             + ": "
             + str(exc)
         )
+
         return {
             "ok": False,
-            "erro": "conexao_auth",
+            "erro": "autenticacao",
         }
 
-    _log_seguro(
-        log,
-        "autenticacao HTTP "
-        + str(resposta_auth.status_code)
-    )
-
-    if resposta_auth.status_code != 200:
-        _log_seguro(
-            log,
-            "autenticacao recusada pela ANA."
-        )
-        return {
-            "ok": False,
-            "erro": "http_auth",
-            "http": resposta_auth.status_code,
-        }
-
-    try:
-        payload_auth = resposta_auth.json()
-    except Exception:
-        _log_seguro(
-            log,
-            "resposta de autenticacao nao e JSON."
-        )
-        return {
-            "ok": False,
-            "erro": "json_auth",
-        }
-
-    items_auth = payload_auth.get("items") or {}
-
-    if isinstance(items_auth, list):
-        item_token = (
-            items_auth[0]
-            if items_auth
-            else {}
-        )
-    elif isinstance(items_auth, dict):
-        item_token = items_auth
-    else:
-        item_token = {}
-
-    token = (
-        item_token.get("tokenautenticacao")
-        or item_token.get("Tokenautenticacao")
-        or item_token.get("tokenAutenticacao")
-    )
-
-    if not token:
-        _log_seguro(
-            log,
-            "autenticacao respondeu, mas o token "
-            "nao foi localizado."
-        )
-        return {
-            "ok": False,
-            "erro": "token_ausente",
-        }
-
-    _log_seguro(
-        log,
-        "autenticacao OK; token recebido e ocultado."
-    )
-
-    url_serie = (
-        BASE
-        + "/HidroinfoanaSerieTelemetricaAdotada/v1"
-    )
-
-    resultado = {
-        "ok": True,
-        "estacoes": {},
-    }
-
-    for nome, codigo in ESTACOES_TESTE.items():
+    for nome, codigo in (
+        ESTACOES_TESTE.items()
+    ):
 
         try:
-            resposta = requests.get(
-                url_serie,
-                params={
-                    "Código da Estação": int(codigo),
-                    "Tipo Filtro Data": "DATA_LEITURA",
-                    "Data de Busca (yyyy-MM-dd)": (
-                        datetime.now().strftime(
-                            "%Y-%m-%d"
-                        )
-                    ),
-                    "Range Intervalo de busca": "DIAS_30",
-                },
-                headers={
-                    "Authorization": "Bearer " + token,
-                    "User-Agent": "Monitor-Taquari-V3/1.0",
-                },
-                timeout=(8, 20),
+
+            resposta = _consultar_serie(
+                codigo,
+                token,
             )
-        except Exception as exc:
+
             _log_seguro(
                 log,
                 nome
-                + ": erro de conexao: "
-                + type(exc).__name__
-                + ": "
-                + str(exc)
+                + ": HTTP "
+                + str(
+                    resposta.status_code
+                )
             )
-            resultado["estacoes"][nome] = {
-                "ok": False,
-                "erro": "conexao",
-            }
-            continue
 
-        _log_seguro(
-            log,
-            nome
-            + ": HTTP "
-            + str(resposta.status_code)
-        )
+            resposta.raise_for_status()
 
-        if resposta.status_code != 200:
+            payload = resposta.json()
 
-            detalhe = None
+            itens = (
+                payload.get("items")
+                or []
+            )
 
-            try:
-                erro_json = resposta.json()
-
-                if isinstance(erro_json, dict):
-                    detalhe = {
-                        "status": erro_json.get("status"),
-                        "code": erro_json.get("code"),
-                        "message": erro_json.get("message"),
-                    }
-
-            except Exception:
-                detalhe = (
-                    resposta.text[:500]
-                    if resposta.text
-                    else None
+            if not isinstance(
+                itens,
+                list,
+            ):
+                raise RuntimeError(
+                    "items nao e lista"
                 )
 
             _log_seguro(
                 log,
                 nome
-                + ": erro HTTP "
-                + str(resposta.status_code)
-                + " detalhe="
-                + str(detalhe)
+                + ": registros="
+                + str(len(itens))
             )
 
-            resultado["estacoes"][nome] = {
-                "ok": False,
-                "http": resposta.status_code,
-                "detalhe": detalhe,
-            }
-
-            continue
-
-        try:
-            payload = resposta.json()
-        except Exception:
-            _log_seguro(
-                log,
-                nome + ": resposta nao e JSON."
+            ultimo = (
+                itens[-1]
+                if itens
+                else {}
             )
-            resultado["estacoes"][nome] = {
-                "ok": False,
-                "erro": "json",
+
+            resumo = {
+                "ok": True,
+                "registros":
+                    len(itens),
             }
-            continue
 
-        registros = payload.get("items") or []
+            if isinstance(
+                ultimo,
+                dict,
+            ):
 
-        if not isinstance(registros, list):
-            _log_seguro(
-                log,
-                nome + ": formato de items inesperado."
-            )
-            resultado["estacoes"][nome] = {
-                "ok": False,
-                "erro": "formato_items",
-            }
-            continue
-
-        _log_seguro(
-            log,
-            nome
-            + ": registros="
-            + str(len(registros))
-        )
-
-        resumo = {
-            "ok": True,
-            "registros": len(registros),
-        }
-
-        if registros:
-            ultimo = registros[-1]
-
-            if isinstance(ultimo, dict):
-                resumo["ultimo"] = {
-                    "data": (
-                        ultimo.get("Data_Hora_Medicao")
-                        or ultimo.get("Data_Atualizacao")
-                    ),
-                    "cota_cm": ultimo.get("Cota_Adotada"),
-                    "chuva_mm": ultimo.get("Chuva_Adotada"),
-                    "vazao_m3s": ultimo.get("Vazao_Adotada"),
-                    "qc_cota": ultimo.get(
-                        "Cota_Adotada_Status"
-                    ),
+                resumo[
+                    "ultimo"
+                ] = {
+                    "data":
+                        ultimo.get(
+                            "Data_Hora_Medicao"
+                        ),
+                    "cota_cm":
+                        ultimo.get(
+                            "Cota_Adotada"
+                        ),
+                    "chuva_mm":
+                        ultimo.get(
+                            "Chuva_Adotada"
+                        ),
+                    "vazao_m3s":
+                        ultimo.get(
+                            "Vazao_Adotada"
+                        ),
+                    "qc_cota":
+                        ultimo.get(
+                            "Cota_Adotada_Status"
+                        ),
                 }
 
                 _log_seguro(
                     log,
                     nome
                     + ": ultimo="
-                    + str(resumo["ultimo"])
+                    + str(
+                        resumo["ultimo"]
+                    )
                 )
 
-        resultado["estacoes"][nome] = resumo
+            resultado[
+                "estacoes"
+            ][nome] = resumo
 
-    resultado["testado_em"] = datetime.now().isoformat(
+        except Exception as exc:
+
+            resultado["ok"] = False
+
+            resultado[
+                "estacoes"
+            ][nome] = {
+                "ok": False,
+                "erro":
+                    type(exc).__name__
+                    + ": "
+                    + str(exc),
+            }
+
+            _log_seguro(
+                log,
+                nome
+                + ": falha: "
+                + type(exc).__name__
+                + ": "
+                + str(exc)
+            )
+
+    resultado[
+        "testado_em"
+    ] = datetime.now().isoformat(
         timespec="seconds"
     )
 
