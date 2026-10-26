@@ -220,28 +220,61 @@ def iniciar_coletor():
 # TURSO
 # ============================================================
 
-try:
+if turso_configurado():
 
-    if turso_configurado():
+    restaurado = False
 
-        inicializar()
-        restaurar_do_turso()
+    for tentativa in range(
+        1,
+        5,
+    ):
 
-    else:
+        try:
+
+            inicializar()
+            restaurar_do_turso()
+
+            restaurado = True
+
+            print(
+                "[TURSO] Restauracao inicial validada "
+                f"na tentativa {tentativa}.",
+                flush=True,
+            )
+
+            break
+
+        except Exception:
+
+            print(
+                "[TURSO] Falha na restauracao inicial "
+                f"(tentativa {tentativa}/4).",
+                flush=True,
+            )
+
+            traceback.print_exc()
+
+            if tentativa < 4:
+
+                time.sleep(
+                    tentativa * 2
+                )
+
+    if not restaurado:
 
         print(
-            "[TURSO] Credenciais nao encontradas.",
+            "[TURSO] ATENCAO: restauracao inicial "
+            "nao validada. Upload remoto permanece "
+            "bloqueado nesta instancia.",
             flush=True,
         )
 
-except Exception:
+else:
 
     print(
-        "[TURSO] ERRO NA INICIALIZACAO:",
+        "[TURSO] Credenciais nao encontradas.",
         flush=True,
     )
-
-    traceback.print_exc()
 
 
 # ============================================================
