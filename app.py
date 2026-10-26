@@ -88,14 +88,6 @@ ESTADO_RUNTIME = {
     "ultimo_ping_externo": None,
 }
 
-ESTADO_ANA_NOVA = {
-    "iniciado": False,
-    "concluido": False,
-    "resultado": None,
-    "erro": None,
-    "testado_em": None,
-}
-
 
 def agora_iso():
     return datetime.now().isoformat(
@@ -253,107 +245,8 @@ except Exception:
 
 
 # ============================================================
-# TESTE ISOLADO - NOVA API ANA
-#
-# Executa uma unica vez em thread separada.
-# Nao altera buscar_ana(), historico ou dashboard.
-# ============================================================
-
-def iniciar_teste_ana_nova():
-
-    ESTADO_ANA_NOVA[
-        "iniciado"
-    ] = True
-
-    ESTADO_ANA_NOVA[
-        "concluido"
-    ] = False
-
-    print(
-        "[ANA NOVA] thread de teste iniciada.",
-        flush=True,
-    )
-
-    def executar():
-
-        try:
-
-            from ana_api_nova import (
-                testar_ana_nova_render,
-            )
-
-            def log_ana(mensagem):
-
-                print(
-                    "[ANA NOVA] "
-                    + str(mensagem),
-                    flush=True,
-                )
-
-            resultado = testar_ana_nova_render(
-                log_ana
-            )
-
-            ESTADO_ANA_NOVA[
-                "resultado"
-            ] = resultado
-
-            ESTADO_ANA_NOVA[
-                "erro"
-            ] = None
-
-        except Exception as e:
-
-            ESTADO_ANA_NOVA[
-                "resultado"
-            ] = None
-
-            ESTADO_ANA_NOVA[
-                "erro"
-            ] = (
-                type(e).__name__
-                + ": "
-                + str(e)
-            )
-
-            print(
-                "[ANA NOVA] teste isolado falhou: "
-                + type(e).__name__
-                + ": "
-                + str(e),
-                flush=True,
-            )
-
-        finally:
-
-            ESTADO_ANA_NOVA[
-                "concluido"
-            ] = True
-
-            ESTADO_ANA_NOVA[
-                "testado_em"
-            ] = agora_iso()
-
-    thread = threading.Thread(
-        target=executar,
-        daemon=True,
-        name="teste-ana-nova",
-    )
-
-    thread.start()
-
-
-iniciar_teste_ana_nova()
-
-
-# ============================================================
 # INICIA COLETOR
 # ============================================================
-
-print(
-    "[RELEASE] ANA_NOVA_PRODUCAO_20261026_1250",
-    flush=True,
-)
 
 iniciar_coletor()
 
@@ -939,35 +832,6 @@ def api_eventos_hidrologicos():
 
     return jsonify(
         dados
-    )
-
-
-@app.get("/ana-nova-status")
-def ana_nova_status():
-
-    return jsonify(
-        {
-            "status": "ok",
-            "iniciado": bool(
-                ESTADO_ANA_NOVA.get(
-                    "iniciado"
-                )
-            ),
-            "concluido": bool(
-                ESTADO_ANA_NOVA.get(
-                    "concluido"
-                )
-            ),
-            "resultado": ESTADO_ANA_NOVA.get(
-                "resultado"
-            ),
-            "erro": ESTADO_ANA_NOVA.get(
-                "erro"
-            ),
-            "testado_em": ESTADO_ANA_NOVA.get(
-                "testado_em"
-            ),
-        }
     )
 
 
