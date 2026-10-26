@@ -205,94 +205,130 @@ def salvar_no_turso():
 
         return False
 
-    conn = None
+    ultimo_erro = None
 
-    try:
+    for tentativa in range(
+        1,
+        4,
+    ):
 
-        conn = conectar()
+        conn = None
 
-        criar_tabela(
-            conn
-        )
+        try:
 
-        momento = agora()
+            conn = conectar()
 
-        total = 0
-
-        for arquivo in ARQUIVOS_PERSISTENTES:
-
-            if not arquivo.exists():
-                continue
-
-            conteudo = arquivo.read_text(
-                encoding="utf-8-sig",
-                errors="replace",
+            criar_tabela(
+                conn
             )
 
-            nome = str(
-                arquivo.relative_to(
-                    BASE_DIR
+            momento = agora()
+
+            total = 0
+
+            for arquivo in ARQUIVOS_PERSISTENTES:
+
+                if not arquivo.exists():
+                    continue
+
+                conteudo = arquivo.read_text(
+                    encoding="utf-8-sig",
+                    errors="replace",
                 )
-            ).replace(
-                "\\",
-                "/",
-            )
 
-            conn.execute(
-                """
-                INSERT INTO monitor_arquivos
+                nome = str(
+                    arquivo.relative_to(
+                        BASE_DIR
+                    )
+                ).replace(
+                    "\\",
+                    "/",
+                )
+
+                conn.execute(
+                    """
+                    INSERT INTO monitor_arquivos
+                        (
+                            nome,
+                            conteudo,
+                            atualizado_em
+                        )
+                    VALUES (?, ?, ?)
+
+                    ON CONFLICT(nome)
+                    DO UPDATE SET
+                        conteudo = excluded.conteudo,
+                        atualizado_em = excluded.atualizado_em
+                    """,
                     (
                         nome,
                         conteudo,
-                        atualizado_em
-                    )
-                VALUES (?, ?, ?)
+                        momento,
+                    ),
+                )
 
-                ON CONFLICT(nome)
-                DO UPDATE SET
-                    conteudo = excluded.conteudo,
-                    atualizado_em = excluded.atualizado_em
-                """,
-                (
-                    nome,
-                    conteudo,
-                    momento,
-                ),
+                total += 1
+
+            conn.commit()
+
+            # envia as alteracoes para Turso
+            conn.sync()
+
+            atualizar_lista_local(
+                conn
             )
 
-            total += 1
+            _ESTADO["conectado"] = True
+            _ESTADO["ultima_sincronizacao"] = agora()
+            _ESTADO["ultimo_erro"] = None
 
-        conn.commit()
+            print(
+                "[TURSO] "
+                f"{total} arquivo(s) sincronizado(s) "
+                f"na tentativa {tentativa}.",
+                flush=True,
+            )
 
-        # envia as alteracoes para Turso
-        conn.sync()
+            return True
 
-        atualizar_lista_local(
-            conn
-        )
+        except Exception as e:
 
-        _ESTADO["conectado"] = True
-        _ESTADO["ultima_sincronizacao"] = agora()
-        _ESTADO["ultimo_erro"] = None
+            ultimo_erro = e
 
-        print(
-            f"[TURSO] {total} arquivo(s) sincronizado(s).",
-            flush=True,
-        )
+            _ESTADO["conectado"] = False
+            _ESTADO["ultimo_erro"] = str(e)
 
-        return True
+            print(
+                "[TURSO] Falha no salvamento "
+                f"(tentativa {tentativa}/3): "
+                + type(e).__name__
+                + ": "
+                + str(e),
+                flush=True,
+            )
 
-    except Exception as e:
+            if tentativa < 3:
 
-        _ESTADO["conectado"] = False
-        _ESTADO["ultimo_erro"] = str(e)
+                import time
 
-        raise
+                time.sleep(
+                    tentativa * 2
+                )
 
-    finally:
+        finally:
 
-        if conn is not None:
-            conn.close()
+            if conn is not None:
+
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    raise RuntimeError(
+        "Falha ao sincronizar com Turso "
+        "apos 3 tentativas: "
+        + str(ultimo_erro)
+    )
 
 
 def restaurar_do_turso():
