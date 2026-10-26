@@ -358,9 +358,10 @@ def gerar_html_graficos_historicos():
     margin-bottom:18px;
     padding:20px;
     border-radius:16px;
-    background:#151e23;
-    border:1px solid #2b3941;
-    color:#f4f7f8;
+    background:#ffffff;
+    border:1px solid #d8e1e8;
+    color:#1e293b;
+    box-shadow:0 4px 14px rgba(15,23,42,.06);
 }
 
 .hist-topo {
@@ -373,7 +374,7 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-titulo {
-    color:#8fb8d0;
+    color:#1e40af;
     font-size:15px;
     font-weight:800;
     letter-spacing:.04em;
@@ -381,7 +382,7 @@ def gerar_html_graficos_historicos():
 
 .hist-subtitulo {
     margin-top:4px;
-    color:#819ba9;
+    color:#475569;
     font-size:11px;
 }
 
@@ -392,9 +393,9 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-btn {
-    border:1px solid #344852;
-    background:#0c1418;
-    color:#9fb8c5;
+    border:1px solid #cbd5e1;
+    background:#f8fafc;
+    color:#475569;
     border-radius:8px;
     padding:7px 12px;
     font-size:11px;
@@ -403,25 +404,25 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-btn:hover {
-    border-color:#66889a;
+    border-color:#94a3b8;
 }
 
 .hist-btn.ativo {
-    background:#243640;
-    border-color:#79a7be;
-    color:#fff;
+    background:#1d4ed8;
+    border-color:#1e40af;
+    color:#ffffff;
 }
 
 .hist-propagacao {
     margin-bottom:16px;
     padding:15px;
     border-radius:13px;
-    background:#0d171c;
-    border:1px solid #2b3d46;
+    background:#f8fafc;
+    border:1px solid #d8e1e8;
 }
 
 .hist-propagacao-titulo {
-    color:#8fb8d0;
+    color:#1e40af;
     font-size:12px;
     font-weight:800;
     letter-spacing:.035em;
@@ -436,48 +437,48 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-propagacao-item {
-    background:#091216;
-    border:1px solid #22323a;
+    background:#ffffff;
+    border:1px solid #e2e8f0;
     border-radius:9px;
     padding:10px 12px;
 }
 
 .hist-propagacao-item span {
     display:block;
-    color:#6f8d9c;
+    color:#64748b;
     font-size:9px;
     margin-bottom:4px;
 }
 
 .hist-propagacao-item strong {
     display:block;
-    color:#ffffff;
+    color:#1e293b;
     font-size:14px;
 }
 
 .hist-propagacao-destaque {
-    border-color:#426174;
+    border-color:#93c5fd;
 }
 
 .hist-propagacao-destaque strong {
-    color:#a9dcf5;
+    color:#1d4ed8;
     font-size:18px;
 }
 
 .hist-propagacao-texto {
     margin-top:11px;
-    color:#c1d0d7;
+    color:#334155;
     font-size:12px;
     line-height:1.55;
 }
 
 .hist-propagacao-texto strong {
-    color:#ffffff;
+    color:#1e293b;
 }
 
 .hist-propagacao-nota {
     margin-top:7px;
-    color:#66818f;
+    color:#64748b;
     font-size:9px;
     line-height:1.4;
 }
@@ -497,11 +498,12 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-card {
-    background:#10191e;
-    border:1px solid #293941;
+    background:#ffffff;
+    border:1px solid #d8e1e8;
     border-radius:14px;
     padding:15px;
     min-width:0;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
 }
 
 .hist-card-largo {
@@ -509,14 +511,14 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-card-titulo {
-    color:#9bb9c8;
+    color:#334155;
     font-size:12px;
     font-weight:800;
     margin-bottom:4px;
 }
 
 .hist-card-unidade {
-    color:#668495;
+    color:#64748b;
     font-size:10px;
 }
 
@@ -530,21 +532,22 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-metrica {
-    background:#0b1317;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
     border-radius:9px;
     padding:8px 9px;
 }
 
 .hist-metrica span {
     display:block;
-    color:#6f8c9c;
+    color:#64748b;
     font-size:9px;
     margin-bottom:3px;
 }
 
 .hist-metrica strong {
     display:block;
-    color:#fff;
+    color:#1e293b;
     font-size:13px;
 }
 
@@ -553,8 +556,8 @@ def gerar_html_graficos_historicos():
     margin-bottom:13px;
     padding:12px 13px;
     border-radius:10px;
-    background:#0b1317;
-    border:1px solid #263740;
+    background:#f8fafc;
+    border:1px solid #d8e1e8;
 }
 
 .hist-situacao {
@@ -576,36 +579,36 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-descendo {
-    color:#99d3ef;
-    background:#10232c;
-    border:1px solid #31596d;
+    color:#1d4ed8;
+    background:#eff6ff;
+    border:1px solid #93c5fd;
 }
 
 .hist-subindo {
-    color:#f0c977;
-    background:#251f12;
-    border:1px solid #6f5828;
+    color:#92400e;
+    background:#fffbeb;
+    border:1px solid #fcd34d;
 }
 
 .hist-estavel {
-    color:#bdc9ce;
-    background:#182126;
-    border:1px solid #39484f;
+    color:#475569;
+    background:#f8fafc;
+    border:1px solid #cbd5e1;
 }
 
 .hist-explicacao {
-    color:#c3d1d7;
+    color:#334155;
     font-size:12px;
     line-height:1.5;
 }
 
 .hist-explicacao strong {
-    color:#ffffff;
+    color:#1e293b;
 }
 
 .hist-detalhe {
     margin-top:6px;
-    color:#7f9aa7;
+    color:#475569;
     font-size:10px;
     line-height:1.45;
 }
@@ -622,29 +625,29 @@ def gerar_html_graficos_historicos():
 }
 
 .hist-gridline {
-    stroke:#27363e;
+    stroke:#dbe4ea;
     stroke-width:1;
 }
 
 .hist-eixo-label {
-    fill:#698391;
+    fill:#64748b;
     font-size:10px;
 }
 
 .hist-linha {
     fill:none;
-    stroke:#8bc0dd;
+    stroke:#2563eb;
     stroke-width:2.5;
     stroke-linejoin:round;
     stroke-linecap:round;
 }
 
 .hist-area {
-    fill:rgba(139,192,221,.08);
+    fill:rgba(37,99,235,.08);
 }
 
 .hist-ponto-final {
-    fill:#d8eef8;
+    fill:#1d4ed8;
 }
 
 .hist-tooltip {
@@ -652,25 +655,25 @@ def gerar_html_graficos_historicos():
     display:none;
     z-index:999999;
     pointer-events:none;
-    background:#080f13;
-    border:1px solid #3a505b;
-    color:#fff;
+    background:#1e293b;
+    border:1px solid #334155;
+    color:#ffffff;
     padding:7px 9px;
     border-radius:7px;
     font-size:11px;
     box-shadow:
-        0 5px 20px rgba(0,0,0,.35);
+        0 5px 20px rgba(0,0,0,.22);
 }
 
 .hist-sem-dados {
     margin-top:10px;
-    color:#9aadb6;
+    color:#64748b;
     font-size:12px;
 }
 
 .hist-rodape {
     margin-top:12px;
-    color:#66818e;
+    color:#64748b;
     font-size:10px;
 }
 
