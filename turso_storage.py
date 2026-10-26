@@ -27,6 +27,10 @@ _ESTADO = {
     "arquivos": [],
 }
 
+# Protecao contra sobrescrever o remoto com arquivos locais
+# incompletos quando a restauracao inicial falhar.
+_RESTAURACAO_VALIDADA = False
+
 
 def agora():
     return datetime.now().isoformat(
@@ -182,11 +186,23 @@ def inicializar():
 
 def salvar_no_turso():
 
+    global _RESTAURACAO_VALIDADA
+
     _ESTADO["ultima_operacao"] = (
         "salvamento"
     )
 
     if not turso_configurado():
+        return False
+
+    if not _RESTAURACAO_VALIDADA:
+
+        print(
+            "[TURSO] SALVAMENTO BLOQUEADO: "
+            "restauracao inicial ainda nao foi validada.",
+            flush=True,
+        )
+
         return False
 
     conn = None
@@ -281,6 +297,8 @@ def salvar_no_turso():
 
 def restaurar_do_turso():
 
+    global _RESTAURACAO_VALIDADA
+
     _ESTADO["ultima_operacao"] = (
         "restauracao"
     )
@@ -338,6 +356,8 @@ def restaurar_do_turso():
         _ESTADO["conectado"] = True
         _ESTADO["ultima_sincronizacao"] = agora()
         _ESTADO["ultimo_erro"] = None
+
+        _RESTAURACAO_VALIDADA = True
 
         print(
             f"[TURSO] {total} arquivo(s) restaurado(s).",
