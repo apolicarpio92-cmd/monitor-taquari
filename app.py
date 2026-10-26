@@ -327,6 +327,112 @@ iniciar_coletor()
 # WIDGET INJETADO NO DASHBOARD
 # ============================================================
 
+
+HISTORICO_TEMA_CLARO_OVERRIDE = r'''
+<style>
+#historico-hidrologico.hist-painel {
+    background:#ffffff !important;
+    color:#1e293b !important;
+    border-color:#d8e1e8 !important;
+    box-shadow:0 4px 14px rgba(15,23,42,.06) !important;
+}
+
+#historico-hidrologico .hist-titulo,
+#historico-hidrologico .hist-propagacao-titulo {
+    color:#1e40af !important;
+}
+
+#historico-hidrologico .hist-subtitulo,
+#historico-hidrologico .hist-card-unidade,
+#historico-hidrologico .hist-propagacao-item span,
+#historico-hidrologico .hist-metrica span,
+#historico-hidrologico .hist-detalhe,
+#historico-hidrologico .hist-rodape,
+#historico-hidrologico .hist-propagacao-nota {
+    color:#475569 !important;
+}
+
+#historico-hidrologico .hist-propagacao,
+#historico-hidrologico .hist-metrica,
+#historico-hidrologico .hist-leitura {
+    background:#f8fafc !important;
+    border-color:#d8e1e8 !important;
+}
+
+#historico-hidrologico .hist-card,
+#historico-hidrologico .hist-propagacao-item {
+    background:#ffffff !important;
+    border-color:#d8e1e8 !important;
+    color:#1e293b !important;
+}
+
+#historico-hidrologico .hist-card {
+    box-shadow:0 2px 8px rgba(15,23,42,.04) !important;
+}
+
+#historico-hidrologico .hist-card-titulo,
+#historico-hidrologico .hist-metrica strong,
+#historico-hidrologico .hist-propagacao-item strong,
+#historico-hidrologico .hist-explicacao,
+#historico-hidrologico .hist-explicacao strong,
+#historico-hidrologico .hist-propagacao-texto,
+#historico-hidrologico .hist-propagacao-texto strong {
+    color:#1e293b !important;
+}
+
+#historico-hidrologico .hist-btn {
+    background:#f8fafc !important;
+    color:#475569 !important;
+    border-color:#cbd5e1 !important;
+}
+
+#historico-hidrologico .hist-btn.ativo {
+    background:#1d4ed8 !important;
+    color:#ffffff !important;
+    border-color:#1e40af !important;
+}
+
+#historico-hidrologico .hist-descendo {
+    color:#1d4ed8 !important;
+    background:#eff6ff !important;
+    border-color:#93c5fd !important;
+}
+
+#historico-hidrologico .hist-subindo {
+    color:#92400e !important;
+    background:#fffbeb !important;
+    border-color:#fcd34d !important;
+}
+
+#historico-hidrologico .hist-estavel {
+    color:#475569 !important;
+    background:#f8fafc !important;
+    border-color:#cbd5e1 !important;
+}
+
+#historico-hidrologico .hist-gridline {
+    stroke:#dbe4ea !important;
+}
+
+#historico-hidrologico .hist-eixo-label {
+    fill:#64748b !important;
+}
+
+#historico-hidrologico .hist-linha {
+    stroke:#2563eb !important;
+}
+
+#historico-hidrologico .hist-area {
+    fill:rgba(37,99,235,.08) !important;
+}
+
+#historico-hidrologico .hist-ponto-final {
+    fill:#1d4ed8 !important;
+}
+</style>
+'''
+
+
 WIDGET_STATUS = r'''
 <style>
 #runtime-monitor-taquari {
@@ -826,14 +932,20 @@ def dashboard():
 
         html = html.replace(
             "</body>",
-            WIDGET_STATUS
+            HISTORICO_TEMA_CLARO_OVERRIDE
+            + "\n"
+            + WIDGET_STATUS
             + "\n</body>",
             1,
         )
 
     else:
 
-        html += WIDGET_STATUS
+        html += (
+            HISTORICO_TEMA_CLARO_OVERRIDE
+            + "\n"
+            + WIDGET_STATUS
+        )
 
     resposta = Response(
         html,
