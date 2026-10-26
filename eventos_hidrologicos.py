@@ -2119,10 +2119,11 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .eventos-subtitulo {
-    margin-top:4px;
+    margin-top:5px;
     color:#475569;
-    font-size:11px;
+    font-size:12px;
     font-weight:600;
+    line-height:1.45;
 }
 
 .eventos-contagem {
@@ -2164,9 +2165,9 @@ def gerar_html_eventos_hidrologicos():
 .eventos-card span {
     display:block;
     color:#475569;
-    font-size:10px;
+    font-size:11px;
     font-weight:600;
-    margin-bottom:5px;
+    margin-bottom:6px;
 }
 
 .eventos-card strong {
@@ -2176,9 +2177,10 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .eventos-faixa {
-    margin-top:5px;
-    color:#334155;
-    font-size:10px;
+    margin-top:6px;
+    color:#475569;
+    font-size:11px;
+    line-height:1.45;
 }
 
 .eventos-lista {
@@ -2227,9 +2229,9 @@ def gerar_html_eventos_hidrologicos():
 
 .evento-badge {
     display:inline-block;
-    padding:4px 7px;
+    padding:5px 8px;
     border-radius:6px;
-    font-size:9px;
+    font-size:10px;
     font-weight:800;
 }
 
@@ -2250,9 +2252,9 @@ def gerar_html_eventos_hidrologicos():
     display:inline-flex;
     align-items:center;
     gap:5px;
-    padding:4px 7px;
+    padding:5px 8px;
     border-radius:6px;
-    font-size:9px;
+    font-size:10px;
     font-weight:800;
 }
 
@@ -2281,10 +2283,10 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-confianca-detalhes {
-    margin-top:7px;
+    margin-top:8px;
     color:#475569;
-    font-size:10px;
-    line-height:1.55;
+    font-size:11px;
+    line-height:1.6;
 }
 
 .evento-confianca-detalhes ul {
@@ -2313,8 +2315,9 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-influencia-topo span {
-    color:#334155;
-    font-size:9px;
+    color:#475569;
+    font-size:10px;
+    font-weight:600;
 }
 
 .evento-influencia-topo strong {
@@ -2338,15 +2341,17 @@ def gerar_html_eventos_hidrologicos():
 }
 
 .evento-influencia-texto {
-    margin-top:5px;
+    margin-top:6px;
     color:#475569;
-    font-size:10px;
-    line-height:1.55;
+    font-size:11px;
+    line-height:1.6;
 }
 
 .evento-motivo {
     color:#475569;
-    font-size:10px;
+    font-size:11px;
+    font-weight:500;
+    line-height:1.45;
 }
 
 .evento-grid {
@@ -2366,21 +2371,22 @@ def gerar_html_eventos_hidrologicos():
 .evento-dado span {
     display:block;
     color:#475569;
-    font-size:10px;
+    font-size:11px;
     font-weight:600;
-    margin-bottom:4px;
+    margin-bottom:5px;
 }
 
 .evento-dado strong {
     color:#1e293b;
-    font-size:12px;
+    font-size:13px;
+    font-weight:700;
 }
 
 .eventos-nota {
-    margin-top:12px;
+    margin-top:14px;
     color:#475569;
-    font-size:10px;
-    line-height:1.55;
+    font-size:11px;
+    line-height:1.6;
 }
 
 .eventos-status {
