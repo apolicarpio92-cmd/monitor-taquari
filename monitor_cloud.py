@@ -1127,6 +1127,58 @@ def status_fonte(
     )
 
 
+def idade_ana_texto(
+    minutos,
+):
+
+    try:
+        total = max(
+            0,
+            int(
+                round(
+                    float(minutos)
+                )
+            )
+        )
+    except Exception:
+        return "tempo indisponível"
+
+    horas = total // 60
+    mins = total % 60
+
+    if horas <= 0:
+        return f"há {mins} min"
+
+    if horas < 24:
+        return f"há {horas}h{mins:02d}"
+
+    dias = horas // 24
+    horas_restantes = horas % 24
+
+    return (
+        f"há {dias}d "
+        f"{horas_restantes}h{mins:02d}"
+    )
+
+
+def classe_idade_ana(
+    minutos,
+):
+
+    try:
+        idade = float(minutos)
+    except Exception:
+        return "ana-indisponivel"
+
+    if idade <= 60:
+        return "ana-atual"
+
+    if idade <= 180:
+        return "ana-atencao"
+
+    return "ana-defasada"
+
+
 # ============================================================
 # FORMATACAO
 # ============================================================
@@ -3945,6 +3997,47 @@ main {{
     font-weight: 700;
 }}
 
+.ana-leitura {{
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid;
+    font-size: 13px;
+    font-weight: 700;
+}}
+
+.ana-leitura small {{
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: .86;
+}}
+
+.ana-atual {{
+    color: #9fe3b0;
+    background: #102218;
+    border-color: #285b38;
+}}
+
+.ana-atencao {{
+    color: #f1cf78;
+    background: #2a2211;
+    border-color: #655326;
+}}
+
+.ana-defasada {{
+    color: #f09a9a;
+    background: #2a1515;
+    border-color: #693232;
+}}
+
+.ana-indisponivel {{
+    color: #a8b4ba;
+    background: #171d20;
+    border-color: #3a464c;
+}}
+
 .metricas {{
     display: grid;
     grid-template-columns:
@@ -4964,19 +5057,27 @@ SANTA TEREZA
 </span>
 </div>
 
-<div class="hora">
-{
-    santa_atual["data_hora"].strftime(
-        "%d/%m/%Y %H:%M"
-    )
-    if santa_atual
-    else "-"
-}
-</div>
+<div class="ana-leitura {classe_idade_ana(st_idade)}">
+    Última leitura ANA:
+    {
+        santa_atual["data_hora"].strftime(
+            "%H:%M"
+        )
+        if santa_atual
+        else "-"
+    }
+    — {idade_ana_texto(st_idade)}
 
-<div class="status">
-{st_status}
-· dado há {fmt(st_idade,0)} min
+    <small>
+        {
+            santa_atual["data_hora"].strftime(
+                "%d/%m/%Y"
+            )
+            if santa_atual
+            else "Sem data disponível"
+        }
+        · {st_status}
+    </small>
 </div>
 
 <div class="metricas">
@@ -5036,19 +5137,27 @@ LINHA JOSÉ JÚLIO
 </span>
 </div>
 
-<div class="hora">
-{
-    jose_atual["data_hora"].strftime(
-        "%d/%m/%Y %H:%M"
-    )
-    if jose_atual
-    else "-"
-}
-</div>
+<div class="ana-leitura {classe_idade_ana(jj_idade)}">
+    Última leitura ANA:
+    {
+        jose_atual["data_hora"].strftime(
+            "%H:%M"
+        )
+        if jose_atual
+        else "-"
+    }
+    — {idade_ana_texto(jj_idade)}
 
-<div class="status">
-{jj_status}
-· dado há {fmt(jj_idade,0)} min
+    <small>
+        {
+            jose_atual["data_hora"].strftime(
+                "%d/%m/%Y"
+            )
+            if jose_atual
+            else "Sem data disponível"
+        }
+        · {jj_status}
+    </small>
 </div>
 
 <div class="metricas">
